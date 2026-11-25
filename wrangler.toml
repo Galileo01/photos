@@ -137,3 +137,38 @@ bucket_name = "photos-storage-staging"
 # Workers AI binding — see the note under [env.production.ai].
 [env.staging.ai]
 binding = "AI"
+
+# Deploy the website and Worker together on the account's workers.dev subdomain.
+[env.personal]
+name = "photos"
+workers_dev = true
+preview_urls = false
+
+[env.personal.assets]
+directory = "./apps/web/dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*", "/media/*", "/health", "/sitemap.xml", "/robots.txt"]
+
+[env.personal.vars]
+ENVIRONMENT = "production"
+PRIVATE_GALLERY = "true"
+ACCESS_TEAM_DOMAIN = "https://green-frost-e115.cloudflareaccess.com"
+ACCESS_AUD = "5c27446bb6a8f82559c45d6a25c0916932e40508b814ede9bec7db92ee38f51b"
+APP_NAME = "Photos"
+BRAND_NAME = "Photos"
+COPYRIGHT_HOLDER = "Photos"
+APP_DOMAIN = "photos.1354541676.workers.dev"
+CONTACT_EMAIL = "contact@example.com"
+GA_MEASUREMENT_ID = "G-PLACEHOLDER"
+
+[env.personal.triggers]
+crons = []
+
+[[env.personal.d1_databases]]
+binding = "DB"
+database_name = "photos-private"
+database_id = "5103224d-305f-4c93-8912-d5421a3df988"
+
+[[env.personal.r2_buckets]]
+binding = "PHOTOS_BUCKET"
+bucket_name = "photos-private"

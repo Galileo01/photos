@@ -1,5 +1,7 @@
 # Contact Form Setup
 
+**English** | [简体中文](contact-form.zh.md)
+
 The landing page (`apps/web/src/pages/Landing.tsx`) already includes a working contact form
 (`apps/web/src/components/ContactForm.tsx`) built on [Formspree](https://formspree.io/) via the
 `@formspree/react` package's `useForm` hook - there's no backend endpoint to build, just a Formspree

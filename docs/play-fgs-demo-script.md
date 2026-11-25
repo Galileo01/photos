@@ -1,5 +1,7 @@
 # Play Console foreground-service demo video — recording script
 
+**English** | [简体中文](play-fgs-demo-script.zh.md)
+
 For the `FOREGROUND_SERVICE_DATA_SYNC` declaration, after the version 49 rejection
 ("Permission use is either not declared or incorrectly declared" + "Functionality is not initiated
 by or perceptible to the user").

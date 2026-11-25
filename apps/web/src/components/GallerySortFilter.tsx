@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, CheckSquare, Heart, Star, Download, Trash2, Loader2, Copy, Search, Grid3X3, Grid2X2, LayoutGrid, Image, Video, LayoutList, SlidersHorizontal, MapPin, Users, Check } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
+import { useTranslation } from 'react-i18next';
 
 type DensityLevel = 'comfortable' | 'default' | 'dense';
 export type MediaTypeFilter = 'all' | 'photos' | 'videos';
@@ -86,6 +87,7 @@ export function GallerySortFilter({
   onTogglePerson,
   selectionBarOnly = false,
 }: GallerySortFilterProps) {
+  const { t } = useTranslation(['photos', 'common']);
   const isAndroid = Capacitor.getPlatform() === 'android';
   // On mobile, the media-type filter + grid-density controls are tucked into a
   // collapsible row (toggled via the Filters button) so the always-visible row
@@ -116,8 +118,8 @@ export function GallerySortFilter({
                 <button
                   onClick={onClearSelection}
                   className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-white/70 hover:text-white hover:bg-white/15 transition"
-                  aria-label="Clear selection"
-                  title="Clear selection"
+                  aria-label={t('photos:selection.clear')}
+                  title={t('photos:selection.clear')}
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -125,7 +127,7 @@ export function GallerySortFilter({
 
               {/* Count */}
               <span className="text-white font-semibold text-sm flex-shrink-0">
-                {selectedCount} {selectedCount === 1 ? 'photo' : 'photos'}
+                {t('photos:selection.count', { count: selectedCount })}
               </span>
 
               {/* Divider */}
@@ -139,11 +141,11 @@ export function GallerySortFilter({
                   <button
                     onClick={onSelectAllVisible}
                     className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white hover:bg-white/15 transition text-sm font-medium whitespace-nowrap"
-                    aria-label="Select all visible photos"
-                    title="Select all visible"
+                    aria-label={t('photos:selection.selectVisible')}
+                    title={t('photos:selection.selectVisible')}
                   >
                     <CheckSquare className="w-4 h-4" />
-                    <span className="hidden sm:inline">Select All</span>
+                    <span className="hidden sm:inline">{t('photos:selection.selectAll')}</span>
                   </button>
                 )}
 
@@ -152,11 +154,11 @@ export function GallerySortFilter({
                   <button
                     onClick={onToggleFavoriteSelected}
                     className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white hover:bg-white/15 transition text-sm font-medium whitespace-nowrap"
-                    aria-label="Toggle favorite for selected photos"
-                    title="Favorite / Unfavorite"
+                    aria-label={t('photos:selection.toggleFavorite')}
+                    title={t('photos:selection.toggleFavorite')}
                   >
                     <Heart className="w-4 h-4" />
-                    <span className="hidden sm:inline">Favorite</span>
+                    <span className="hidden sm:inline">{t('photos:favorites.title')}</span>
                   </button>
                 )}
 
@@ -165,11 +167,11 @@ export function GallerySortFilter({
                   <button
                     onClick={onToggleFeaturedSelected}
                     className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white hover:bg-white/15 transition text-sm font-medium whitespace-nowrap"
-                    aria-label="Toggle featured for selected photos"
-                    title="Feature / Unfeature"
+                    aria-label={t('photos:selection.toggleFeatured')}
+                    title={t('photos:selection.toggleFeatured')}
                   >
                     <Star className="w-4 h-4" />
-                    <span className="hidden sm:inline">Feature</span>
+                    <span className="hidden sm:inline">{t('photos:featured.mark')}</span>
                   </button>
                 )}
 
@@ -178,14 +180,14 @@ export function GallerySortFilter({
                   onClick={onDownloadSelected}
                   disabled={isDownloading}
                   className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white hover:bg-white/15 transition text-sm font-medium whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label="Download selected as ZIP"
-                  title={isDownloading ? 'Preparing download...' : 'Download as ZIP'}
+                  aria-label={t('photos:download.asZip')}
+                  title={isDownloading ? t('photos:download.preparing') : t('photos:download.asZip')}
                 >
                   {isDownloading
                     ? <Loader2 className="w-4 h-4 animate-spin" />
                     : <Download className="w-4 h-4" />
                   }
-                  <span className="hidden sm:inline">{isDownloading ? 'Preparing...' : 'Download'}</span>
+                  <span className="hidden sm:inline">{isDownloading ? t('photos:download.preparing') : t('common:actions.download')}</span>
                 </button>
 
                 {/* Copy to Album (admin) */}
@@ -194,14 +196,14 @@ export function GallerySortFilter({
                     onClick={onCopySelected}
                     disabled={isCopying}
                     className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white hover:bg-white/15 transition text-sm font-medium whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                    aria-label="Copy selected photos to another album"
-                    title={isCopying ? 'Copying...' : 'Copy to Album'}
+                    aria-label={t('photos:selection.copyToEvent')}
+                    title={isCopying ? t('common:states.copying') : t('photos:selection.copyToEvent')}
                   >
                     {isCopying
                       ? <Loader2 className="w-4 h-4 animate-spin" />
                       : <Copy className="w-4 h-4" />
                     }
-                    <span className="hidden sm:inline">{isCopying ? 'Copying...' : 'Copy to Album'}</span>
+                    <span className="hidden sm:inline">{isCopying ? t('common:states.copying') : t('photos:selection.copyToEvent')}</span>
                   </button>
                 )}
 
@@ -210,11 +212,11 @@ export function GallerySortFilter({
                   <button
                     onClick={onSetLocationSelected}
                     className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white hover:bg-white/15 transition text-sm font-medium whitespace-nowrap"
-                    aria-label="Set location for selected photos"
-                    title="Set Location"
+                    aria-label={t('photos:selection.setLocation')}
+                    title={t('photos:selection.setLocation')}
                   >
                     <MapPin className="w-4 h-4" />
-                    <span className="hidden sm:inline">Set Location</span>
+                    <span className="hidden sm:inline">{t('photos:selection.setLocation')}</span>
                   </button>
                 )}
 
@@ -223,11 +225,11 @@ export function GallerySortFilter({
                   <button
                     onClick={onTagPeopleSelected}
                     className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white hover:bg-white/15 transition text-sm font-medium whitespace-nowrap"
-                    aria-label="Tag people on selected photos"
-                    title="Tag People"
+                    aria-label={t('photos:selection.tagPeople')}
+                    title={t('photos:selection.tagPeople')}
                   >
                     <Users className="w-4 h-4" />
-                    <span className="hidden sm:inline">Tag People</span>
+                    <span className="hidden sm:inline">{t('photos:selection.tagPeople')}</span>
                   </button>
                 )}
 
@@ -237,14 +239,14 @@ export function GallerySortFilter({
                     onClick={onDeleteSelected}
                     disabled={isDeleting}
                     className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-red-200 hover:bg-red-500/20 transition text-sm font-medium whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                    aria-label="Delete selected photos"
-                    title={isDeleting ? 'Deleting...' : 'Delete selected'}
+                    aria-label={t('photos:selection.deleteSelected')}
+                    title={isDeleting ? t('common:states.deleting') : t('photos:selection.deleteSelected')}
                   >
                     {isDeleting
                       ? <Loader2 className="w-4 h-4 animate-spin" />
                       : <Trash2 className="w-4 h-4" />
                     }
-                    <span className="hidden sm:inline">{isDeleting ? 'Deleting...' : 'Delete'}</span>
+                    <span className="hidden sm:inline">{isDeleting ? t('common:states.deleting') : t('common:actions.delete')}</span>
                   </button>
                 )}
               </div>
@@ -260,19 +262,19 @@ export function GallerySortFilter({
         <div className="flex items-center gap-3">
           <div className="flex items-center flex-shrink-0">
             <label className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-300 mr-3">
-              Sort by
+              {t('photos:filters.sortBy')}
             </label>
             <select
               value={sortBy}
               onChange={(e) => onSortChange(e.target.value)}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              aria-label="Sort by"
+              aria-label={t('photos:filters.sortBy')}
             >
-              <option value="date_desc">Date (Newest First)</option>
-              <option value="date_asc">Date (Oldest First)</option>
-              <option value="uploaded_desc">Recently Uploaded</option>
-              <option value="name_asc">Name (A-Z)</option>
-              <option value="name_desc">Name (Z-A)</option>
+              <option value="date_desc">{t('photos:filters.newest')}</option>
+              <option value="date_asc">{t('photos:filters.oldest')}</option>
+              <option value="uploaded_desc">{t('photos:filters.recentlyUploaded')}</option>
+              <option value="name_asc">{t('photos:filters.nameAsc')}</option>
+              <option value="name_desc">{t('photos:filters.nameDesc')}</option>
             </select>
           </div>
 
@@ -282,14 +284,14 @@ export function GallerySortFilter({
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search photos by name, camera, city..."
+              placeholder={t('photos:filters.searchPlaceholder')}
               className="w-full pl-9 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             {searchQuery && (
               <button
                 onClick={() => onSearchChange('')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                aria-label="Clear search"
+                aria-label={t('photos:filters.clearSearch')}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -305,9 +307,9 @@ export function GallerySortFilter({
                   ? 'bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400'
                   : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400'
               }`}
-              aria-label="Toggle filters and view options"
+              aria-label={t('photos:filters.viewOptions')}
               aria-expanded={showMobileFilters}
-              title="Filters & view"
+              title={t('photos:filters.viewOptions')}
             >
               <SlidersHorizontal className="w-4 h-4" />
               {hasActiveMobileFilter && (
@@ -328,37 +330,37 @@ export function GallerySortFilter({
               <div
                 className="flex items-center gap-0.5 border border-gray-300 dark:border-gray-600 rounded-lg p-0.5"
                 role="group"
-                aria-label="Filter by media type"
+                aria-label={t('photos:filters.mediaType')}
               >
                 <button
                   onClick={() => onMediaTypeFilterChange('all')}
                   className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${mediaTypeFilter === 'all' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                  title="Show all media"
-                  aria-label="Show all media"
+                  title={t('photos:filters.showAll')}
+                  aria-label={t('photos:filters.showAll')}
                   aria-pressed={mediaTypeFilter === 'all'}
                 >
                   <LayoutList className="w-4 h-4" />
-                  <span className="inline">All</span>
+                  <span className="inline">{t('photos:filters.all')}</span>
                 </button>
                 <button
                   onClick={() => onMediaTypeFilterChange('photos')}
                   className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${mediaTypeFilter === 'photos' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                  title="Show photos only"
-                  aria-label="Show photos only"
+                  title={t('photos:filters.showPhotos')}
+                  aria-label={t('photos:filters.showPhotos')}
                   aria-pressed={mediaTypeFilter === 'photos'}
                 >
                   <Image className="w-4 h-4" />
-                  <span className="inline">Photos</span>
+                  <span className="inline">{t('photos:filters.photos')}</span>
                 </button>
                 <button
                   onClick={() => onMediaTypeFilterChange('videos')}
                   className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${mediaTypeFilter === 'videos' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                  title="Show videos only"
-                  aria-label="Show videos only"
+                  title={t('photos:filters.showVideos')}
+                  aria-label={t('photos:filters.showVideos')}
                   aria-pressed={mediaTypeFilter === 'videos'}
                 >
                   <Video className="w-4 h-4" />
-                  <span className="inline">Videos</span>
+                  <span className="inline">{t('photos:filters.videos')}</span>
                 </button>
               </div>
             )}
@@ -369,24 +371,24 @@ export function GallerySortFilter({
                 <button
                   onClick={() => onDensityChange('comfortable')}
                   className={`p-1.5 rounded transition-colors ${density === 'comfortable' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                  title="Comfortable (larger photos)"
-                  aria-label="Comfortable grid density"
+                  title={t('photos:filters.comfortable')}
+                  aria-label={t('photos:filters.comfortable')}
                 >
                   <LayoutGrid className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => onDensityChange('default')}
                   className={`p-1.5 rounded transition-colors ${density === 'default' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                  title="Default"
-                  aria-label="Default grid density"
+                  title={t('photos:filters.default')}
+                  aria-label={t('photos:filters.default')}
                 >
                   <Grid2X2 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => onDensityChange('dense')}
                   className={`p-1.5 rounded transition-colors ${density === 'dense' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                  title="Dense (more photos per row)"
-                  aria-label="Dense grid density"
+                  title={t('photos:filters.dense')}
+                  aria-label={t('photos:filters.dense')}
                 >
                   <Grid3X3 className="w-4 h-4" />
                 </button>
@@ -407,25 +409,25 @@ export function GallerySortFilter({
                   aria-expanded={showPeoplePicker}
                 >
                   <Users className="w-4 h-4" />
-                  {selectedPeople.length > 0 ? `${selectedPeople.length} ${selectedPeople.length === 1 ? 'person' : 'people'}` : 'People'}
+                  {selectedPeople.length > 0 ? t('photos:filters.peopleCount', { count: selectedPeople.length }) : t('photos:filters.people')}
                 </button>
 
                 {showPeoplePicker && (
                   <div className="absolute left-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 z-30">
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                      Selecting multiple people only shows photos where they're all together.
+                      {t('photos:filters.peopleHint')}
                     </p>
                     <input
                       type="text"
                       value={peopleSearchQuery}
                       onChange={(e) => setPeopleSearchQuery(e.target.value)}
-                      placeholder="Search people…"
+                      placeholder={t('photos:filters.searchPeople')}
                       className="w-full mb-2 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       autoFocus
                     />
                     <div className="max-h-56 overflow-y-auto space-y-1">
                       {(namedPeople || []).length === 0 ? (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 py-2 text-center">No named people yet.</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 py-2 text-center">{t('photos:filters.noPeople')}</p>
                       ) : (
                         (namedPeople || [])
                           .filter((p) => p.name.toLowerCase().includes(peopleSearchQuery.trim().toLowerCase()))

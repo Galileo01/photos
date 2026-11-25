@@ -1,5 +1,7 @@
 # Mobile App (Android)
 
+**English** | [简体中文](mobile-guide.zh.md)
+
 This folder contains the Capacitor-powered mobile app for the Photos application. It wraps the
 existing React web app and adds native capabilities like background sync and folder access.
 

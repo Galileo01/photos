@@ -12,9 +12,11 @@ import { getEvents, getTags } from '../api';
 import EventThumbnail from '../components/EventThumbnail';
 import type { Event, Tag } from '../types';
 import { config } from '../config';
+import { useTranslation } from 'react-i18next';
 
 const EventList: React.FC = () => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation(['common', 'events']);
   const { registerRefreshHandler, unregisterRefreshHandler } = useRefresh();
   const { user } = useAuth();
   const isAdmin = user?.isAdmin === true;
@@ -64,7 +66,7 @@ const EventList: React.FC = () => {
       setEvents(visibleEvents);
       setError(null);
     } catch (err) {
-      setError('Failed to load events');
+      setError(t('events:list.loadFailed'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -82,7 +84,7 @@ const EventList: React.FC = () => {
       applyFilters(tagSlug, selectedCity);
       setError(null);
     } catch (err) {
-      setError('Failed to filter events');
+      setError(t('events:list.filterFailed'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -130,16 +132,16 @@ const EventList: React.FC = () => {
   };
 
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return 'No date';
+    if (!dateStr) return t('events:list.noDate');
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    return new Intl.DateTimeFormat(i18n.resolvedLanguage, { year: 'numeric', month: 'long', day: 'numeric' }).format(date);
   };
 
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: 'Photo Events',
-    description: 'Browse all photo events including ice skating, inline skating, and sports photography',
+    name: t('events:list.pageTitle'),
+    description: t('events:list.seoDescription'),
     url: window.location.origin + '/events',
     mainEntity: {
       '@type': 'ItemList',
@@ -166,8 +168,8 @@ const EventList: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       <SEO
-        title={`Photo Events - ${config.brandName} | Browse Event Photography`}
-        description="Browse all photo events featuring ice skating, inline skating, and sports photography. Filter by tags and locations to find your favorite moments."
+        title={t('events:list.seoTitle', { brand: config.brandName })}
+        description={t('events:list.seoDescription')}
         keywords="photo events, ice skating events, inline skating events, sports photography events, event gallery"
         url={window.location.origin + '/events'}
         structuredData={structuredData}
@@ -176,8 +178,8 @@ const EventList: React.FC = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-8 flex-grow w-full">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">Photo Events</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm sm:text-base">Browse all photo events and galleries</p>
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">{t('events:list.pageTitle')}</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm sm:text-base">{t('events:list.subtitle')}</p>
           </div>
           {(selectedTag || selectedCity || searchQuery) && (
             <button
@@ -189,7 +191,7 @@ const EventList: React.FC = () => {
               className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition flex items-center gap-2 text-sm"
             >
               <X className="w-4 h-4" />
-              Clear Filters
+              {t('events:list.clearFilters')}
             </button>
           )}
         </div>
@@ -201,7 +203,7 @@ const EventList: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Search events by name, city, or tag..."
+            placeholder={t('events:searchPlaceholder')}
             className="w-full pl-9 pr-8 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
           />
           {searchQuery && (
@@ -223,7 +225,7 @@ const EventList: React.FC = () => {
             >
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4" />
-                Filter by Tag
+                {t('events:list.filterByTag')}
                 {selectedTag && <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">1</span>}
               </div>
               {showTagFilters ? <ChevronUp className="w-4 h-4 sm:hidden" /> : <ChevronDown className="w-4 h-4 sm:hidden" />}
@@ -237,7 +239,7 @@ const EventList: React.FC = () => {
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                 }`}
               >
-                All Tags
+                {t('events:list.allTags')}
               </button>
               {tags.map((tag) => (
                 <button
@@ -283,7 +285,7 @@ const EventList: React.FC = () => {
                 >
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4" />
-                    Filter by City
+                    {t('events:list.filterByCity')}
                     {selectedCity && <span className="text-xs bg-green-700 text-white px-2 py-0.5 rounded-full">1</span>}
                   </div>
                   {showCityFilters ? <ChevronUp className="w-4 h-4 sm:hidden" /> : <ChevronDown className="w-4 h-4 sm:hidden" />}
@@ -297,7 +299,7 @@ const EventList: React.FC = () => {
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300 active:bg-gray-400 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:active:bg-gray-500'
                     }`}
                   >
-                    All Cities
+                    {t('events:list.allCities')}
                   </button>
                   {visibleCities.map((city) => (
                     <button
@@ -317,7 +319,9 @@ const EventList: React.FC = () => {
                       onClick={() => setShowAllCities(prev => !prev)}
                       className="px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all active:scale-95 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700 dark:hover:bg-gray-800"
                     >
-                      {showAllCities ? 'View less' : `+ ${cities.length - 5} more`}
+                      {showAllCities
+                        ? t('events:list.viewLess')
+                        : t('events:list.moreCities', { count: cities.length - 5 })}
                     </button>
                   )}
                 </div>
@@ -343,10 +347,10 @@ const EventList: React.FC = () => {
               <Calendar className="w-8 h-8 text-gray-400 dark:text-gray-500" />
             </div>
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              {selectedTag || selectedCity || searchQuery ? 'No events match your filters' : 'No events found'}
+              {selectedTag || selectedCity || searchQuery ? t('events:list.noMatches') : t('events:list.noEvents')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {selectedTag || selectedCity || searchQuery ? 'Try adjusting your filters' : 'No events have been created yet'}
+              {selectedTag || selectedCity || searchQuery ? t('events:list.adjustFilters') : t('events:list.noneCreated')}
             </p>
             {(selectedTag || selectedCity || searchQuery) && (
               <button
@@ -358,7 +362,7 @@ const EventList: React.FC = () => {
                 className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition inline-flex items-center gap-2"
               >
                 <X className="w-4 h-4" />
-                Clear Filters
+                {t('events:list.clearFilters')}
               </button>
             )}
           </div>
@@ -405,10 +409,10 @@ const EventList: React.FC = () => {
                         : 'bg-purple-500/80 text-white'
                     }`}>
                       {event.requires_password 
-                        ? 'Password' 
+                        ? t('events:list.password')
                         : event.visibility === 'private'
-                        ? 'Private'
-                        : 'Invite Only'}
+                        ? t('events:private')
+                        : t('events:inviteOnly')}
                     </span>
                   </div>
                 )}
@@ -437,7 +441,7 @@ const EventList: React.FC = () => {
         <button
           onClick={() => setShowCreateModal(true)}
           className="fixed bottom-6 right-6 z-30 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center"
-          aria-label="Create new album"
+          aria-label={t('events:create')}
         >
           <Plus className="w-6 h-6" />
         </button>

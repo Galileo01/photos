@@ -121,6 +121,26 @@ describe('POST /events/:slug/uploads/:photoId/cancel', () => {
     expect(deletedIds).toEqual([]);
   });
 
+  it('aborts an unfinished preview without deleting an already-completed original', async () => {
+    const { env, app, deletedIds, abortedKeys } = createFakeEnv([
+      { id: 'photo-preview', file_type: 'image/jpeg', upload_complete: 1 },
+    ]);
+
+    const res = await app.request(
+      '/events/test-event/uploads/photo-preview/cancel',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uploadId: 'completed-original', previewUploadId: 'preview-123' }),
+      },
+      env
+    );
+
+    expect(res.status).toBe(200);
+    expect(deletedIds).toEqual([]);
+    expect(abortedKeys).toEqual(['preview/test-event/photo-preview.jpg']);
+  });
+
   it('succeeds even when no uploadId is known (pending item never reached R2)', async () => {
     const { env, app, deletedIds, abortedKeys } = createFakeEnv([
       { id: 'photo-3', file_type: 'image/jpeg', upload_complete: 0 },

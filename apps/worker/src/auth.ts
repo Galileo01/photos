@@ -1,13 +1,16 @@
 import { Context, Next } from 'hono';
 import type { Env, User, CloudflareAccessJWT, DBUser, CollaboratorRole } from './types';
-import { jwtVerify } from 'jose';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { hasEventSessionAccess } from './cookies';
 import { createLogger, logger } from './logger';
 
 // Extend Hono context to include user
-type Variables = {
+export type Variables = {
   user: User;
+  accessUser?: User;
 };
+
+const accessKeySets = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
 /**
  * Extract and validate Cloudflare Access JWT from request headers or cookies
@@ -15,6 +18,9 @@ type Variables = {
  */
 export async function extractUser(c: Context<{ Bindings: Env; Variables: Variables }>): Promise<User | null> {
   try {
+    const accessUser = c.get('accessUser');
+    if (accessUser) return accessUser;
+
     // First check for Bearer token (mobile OAuth)
     const authHeader = c.req.header('Authorization');
     if (authHeader?.startsWith('Bearer ')) {
@@ -48,34 +54,18 @@ export async function extractUser(c: Context<{ Bindings: Env; Variables: Variabl
       }
     }
     
-    if (!jwt) {
-      const log = createLogger(c.env);
-      log.debug('No JWT found in headers or cookies.');
-      log.debug('Available headers:', Array.from(c.req.raw.headers.keys()).join(', '));
-      log.debug('Cookie header:', c.req.header('Cookie')?.substring(0, 100));
-      log.debug('Request URL:', c.req.url);
-      return null;
-    }
+    if (!jwt) return null;
 
-    const log = createLogger(c.env);
-    log.debug('JWT found, parsing...');
-    log.debug('JWT preview:', jwt.substring(0, 50) + '...');
-
-    // Decode JWT (Cloudflare Access already validates it at the edge)
-    const payload = parseJWT(jwt);
+    const payload = await readAccessPayload(jwt, c.env);
     
     if (!payload || !payload.sub || !payload.email) {
-      log.debug('Invalid JWT payload:', payload);
       return null;
     }
 
     // Verify expiration
     if (payload.exp && Date.now() >= payload.exp * 1000) {
-      log.debug('JWT expired');
       return null;
     }
-
-    log.debug('User authenticated:', payload.email);
 
     // Build name from available fields
     // Google login may provide given_name/family_name instead of name
@@ -84,17 +74,35 @@ export async function extractUser(c: Context<{ Bindings: Env; Variables: Variabl
       userName = [payload.given_name, payload.family_name].filter(Boolean).join(' ');
     }
 
-    log.debug('User name extracted:', userName || 'No name available');
-
     return {
       id: payload.sub,
       email: payload.email,
       name: userName,
     };
   } catch (error) {
-    logger.error('Error extracting user:', error);
+    createLogger(c.env).debug('Could not validate user identity:', error);
     return null;
   }
+}
+
+async function readAccessPayload(token: string, env: Env): Promise<CloudflareAccessJWT | null> {
+  const issuer = env.ACCESS_TEAM_DOMAIN?.replace(/\/$/, '');
+  const audience = env.ACCESS_AUD;
+
+  if (!issuer || !audience) return null;
+
+  let keySet = accessKeySets.get(issuer);
+  if (!keySet) {
+    keySet = createRemoteJWKSet(new URL('/cdn-cgi/access/certs', issuer));
+    accessKeySets.set(issuer, keySet);
+  }
+  const { payload } = await jwtVerify<CloudflareAccessJWT>(token, keySet, {
+    issuer,
+    audience,
+    algorithms: ['RS256'],
+    requiredClaims: ['sub', 'email', 'exp'],
+  });
+  return payload;
 }
 
 /**

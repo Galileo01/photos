@@ -1,5 +1,7 @@
 # Design: propagate an online delete to the local synced folder (Android)
 
+**English** | [简体中文](local-delete-sync-design.zh.md)
+
 **Status:** IMPLEMENTED (purge-gated + own-deletes-only, opt-in). Chosen safety model: option (A)
 purge-gated and "only my own deletes". Key pieces: migration `031_photo_tombstones.sql`;
 `apps/worker/src/tombstones.ts` + wiring in `routes/admin/photos.ts` (delete/restore),

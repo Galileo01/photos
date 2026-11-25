@@ -16,8 +16,10 @@ import meRoutes from './routes/me';
 import { seo } from './routes/seo';
 import { runUploadNotifications, runStaleUploadCleanup, runTrashPurge, runActivityLogPurge } from './scheduled';
 import { runAiEnrichment } from './aiEnrichment';
+import { extractUser, type Variables } from './auth';
+import { addErrorCode } from './errorCodes';
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // Global request/response logging — mounted first so it wraps every other
 // middleware and route below. This guarantees EVERY request gets logged at
@@ -51,6 +53,26 @@ app.use('/*', async (c, next) => {
   }
 });
 
+// Keep the existing human-readable `error` field for older clients and logs,
+// while giving localized clients a stable value they can translate themselves.
+app.use('/*', async (c, next) => {
+  await next();
+  c.res = await addErrorCode(c.res);
+});
+
+app.use('/*', async (c, next) => {
+  if (c.env.PRIVATE_GALLERY !== 'true') return next();
+
+  const user = await extractUser(c);
+  if (!user) {
+    return c.json({ error: 'Sign-in required' }, 401, { 'Cache-Control': 'private, no-store' });
+  }
+
+  c.set('accessUser', user);
+  await next();
+  c.header('Cache-Control', 'private, no-store');
+});
+
 // Global CORS middleware - configured per request to read env vars
 app.use('/*', async (c, next) => {
   const config = getConfig(c.env);
@@ -75,6 +97,11 @@ app.use('/*', async (c, next) => {
   })(c, next);
 });
 
+// Health check endpoint
+app.get('/health', (c) => {
+  return c.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Mount route modules
 app.route('/', publicRoutes);
 app.route('/', authRoutes);
@@ -87,11 +114,6 @@ app.route('/', collaboratorsRoutes);
 app.route('/', mobileAuthRoutes);
 app.route('/', meRoutes);
 app.route('/', seo);
-
-// Health check endpoint
-app.get('/health', (c) => {
-  return c.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
 
 // 404 handler — the request-logging middleware above already logs this at
 // WARN (status 404), so no separate logging needed here.
@@ -107,7 +129,7 @@ app.notFound((c) => {
 app.onError((err, c) => {
   const log = createLogger(c.env);
   log.error(`Unhandled error in [${c.req.method} ${c.req.path}]:`, err instanceof Error ? err.stack || err.message : err);
-  return c.json({ error: 'Internal server error' }, 500);
+  return c.json({ error: 'Internal server error', code: 'INTERNAL_SERVER_ERROR' }, 500);
 });
 
 export default {

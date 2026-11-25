@@ -9,7 +9,7 @@ import { ulid } from 'ulid';
 import { Capacitor } from '@capacitor/core';
 import ExifReader from 'exifreader';
 import axios from 'axios';
-import { startUpload, uploadPart, completeUpload, cancelUpload as cancelUploadApi, uploadVideoPoster } from '../api';
+import { startUpload, checkExistingUploadHashes, uploadPart, completeUpload, cancelUpload as cancelUploadApi, uploadVideoPoster } from '../api';
 import { addToQueue, updateQueueItem, getQueueItem, getQueueItems, getPendingUploads, removeFromQueue, clearCompletedUploads } from '../uploadQueue';
 import { createPreview, computeFileHash } from '../imageUtils';
 import { isRawFile, isRawFileType, getRawFileType, createRawPreview, createRawPlaceholder } from '../rawImageUtils';
@@ -21,6 +21,15 @@ export interface RejectedUploadFile {
   name: string;
   reason: string;
 }
+
+export type DuplicateUploadFile = {
+  name: string;
+};
+
+export type AddUploadFilesResult = {
+  rejected: RejectedUploadFile[];
+  duplicates: DuplicateUploadFile[];
+};
 
 /** Whether a file is one of the plain (non-RAW) image types we accept as-is. */
 export function isSupportedImageType(file: File): boolean {
@@ -235,7 +244,7 @@ class UploadManager {
    *  survives app-close (BackgroundTask.beforeExit), and resumes on relaunch.
    *  On web there is no such pipeline, so we process in the foreground and let
    *  the GlobalUploadIndicator render live progress. */
-  async addFiles(slug: string, files: FileList | File[]): Promise<{ rejected: RejectedUploadFile[] }> {
+  async addFiles(slug: string, files: FileList | File[]): Promise<AddUploadFilesResult> {
     const supportedFiles: File[] = [];
     const rejected: RejectedUploadFile[] = [];
 
@@ -253,7 +262,7 @@ class UploadManager {
     }
 
     // Nothing to do — bail out before touching the queue.
-    if (supportedFiles.length === 0) return { rejected };
+    if (supportedFiles.length === 0) return { rejected, duplicates: [] };
 
     // Enqueue every item immediately with bare-bones metadata so the UI
     // (GlobalUploadIndicator) can show the upload popup right away instead
@@ -283,12 +292,58 @@ class UploadManager {
         photoId,
       };
 
-      await addToQueue(item);
       this.items.set(id, item);
       enqueued.push(item);
     }
 
     this.notify();
+
+    // Hash before starting any network upload so duplicates never create a
+    // D1 row or R2 multipart session. Queue items are already visible above,
+    // which keeps the upload indicator responsive while hashing large files.
+    await Promise.all(enqueued.map(async (item) => {
+      const fileHash = await computeFileHash(item.file);
+      if (!fileHash) return;
+      item.fileHash = fileHash;
+      this.items.set(item.id, item);
+    }));
+
+    const duplicateIds = new Set<string>();
+    const duplicates: DuplicateUploadFile[] = [];
+    const firstItemByHash = new Map<string, UploadQueueItem>();
+
+    for (const item of enqueued) {
+      if (!item.fileHash) continue;
+      if (firstItemByHash.has(item.fileHash)) {
+        duplicateIds.add(item.id);
+        duplicates.push({ name: item.file.name });
+      } else {
+        firstItemByHash.set(item.fileHash, item);
+      }
+    }
+
+    try {
+      const existingHashes = new Set(await checkExistingUploadHashes(slug, Array.from(firstItemByHash.keys())));
+      for (const hash of existingHashes) {
+        const item = firstItemByHash.get(hash);
+        if (!item) continue;
+        duplicateIds.add(item.id);
+        duplicates.push({ name: item.file.name });
+      }
+    } catch (err) {
+      // Duplicate detection is a convenience guard. A temporary check failure
+      // must not prevent the selected files from uploading.
+      console.warn('[UploadManager] Failed to check existing upload hashes:', err);
+    }
+
+    const uploads = enqueued.filter((item) => !duplicateIds.has(item.id));
+    for (const item of enqueued) {
+      if (duplicateIds.has(item.id)) this.items.delete(item.id);
+    }
+    await Promise.all(uploads.map((item) => addToQueue(item)));
+    this.notify();
+
+    if (uploads.length === 0) return { rejected, duplicates };
 
     if (Capacitor.isNativePlatform()) {
       // Delegate to the background-sync pipeline (progress notifications,
@@ -308,13 +363,13 @@ class UploadManager {
         this.notify();
       } catch (err) {
         console.error('[UploadManager] background sync delegation failed, falling back to foreground:', err);
-        for (const item of enqueued) this.enqueueUpload(item);
+        for (const item of uploads) this.enqueueUpload(item);
       }
     } else {
-      for (const item of enqueued) this.enqueueUpload(item);
+      for (const item of uploads) this.enqueueUpload(item);
     }
 
-    return { rejected };
+    return { rejected, duplicates };
   }
 
 
@@ -376,7 +431,11 @@ class UploadManager {
     // we conservatively always attempt cleanup — the endpoint is a no-op if
     // there's nothing to clean up).
     if (item.photoId) {
-      cancelUploadApi(item.eventSlug, item.photoId, { uploadId: item.uploadId, fileType: item.fileType }).catch(err => {
+      cancelUploadApi(item.eventSlug, item.photoId, {
+        uploadId: item.uploadId,
+        previewUploadId: item.previewUploadId,
+        fileType: item.fileType,
+      }).catch(err => {
         console.warn('[UploadManager] Failed to clean up cancelled upload on server:', err);
       });
     }
@@ -649,10 +708,17 @@ class UploadManager {
         let resuming = !!uploadId && partsCompleted.length > 0 && partsCompleted.length < totalParts;
 
         if (!resuming) {
+          const staleUploadId = uploadId;
           partsCompleted = [];
+          if (staleUploadId) {
+            await cancelUploadApi(item.eventSlug, photoId, { uploadId: staleUploadId, fileType }).catch((cleanupErr) => {
+              console.warn('[UploadManager] Failed to abort expired multipart upload:', cleanupErr);
+            });
+          }
           const started = await startOriginalUpload();
           uploadId = started.uploadId;
           currentUploadId = uploadId;
+          this.updateItem(item.id, { uploadId, parts: [] });
           await updateQueueItem(item.id, { uploadId, parts: [] });
         }
 
@@ -702,10 +768,15 @@ class UploadManager {
           // The resumed multipart upload may have expired or been aborted
           // server-side — fall back to a brand-new upload and retry once
           // from scratch rather than getting stuck retrying forever.
+          const staleUploadId = uploadId;
           partsCompleted = [];
+          await cancelUploadApi(item.eventSlug, photoId, { uploadId: staleUploadId, fileType }).catch((cleanupErr) => {
+            console.warn('[UploadManager] Failed to abort expired multipart upload:', cleanupErr);
+          });
           const started = await startOriginalUpload();
           uploadId = started.uploadId;
           currentUploadId = uploadId;
+          this.updateItem(item.id, { uploadId, parts: [] });
           await updateQueueItem(item.id, { uploadId, parts: [] });
           notCancelled = await uploadRemainingParts();
         }
@@ -734,7 +805,7 @@ class UploadManager {
         // instead of it looking like the upload silently restarted.
         this.updateItem(item.id, { phase: 'preview' });
         await updateQueueItem(item.id, { phase: 'preview' });
-        await this.uploadPreview(item.eventSlug, photoId, previewBlob!);
+        await this.uploadPreview(item, photoId, previewBlob!);
         this.updateItem(item.id, { status: 'completed', progress: 100 });
         await updateQueueItem(item.id, { status: 'completed', progress: 100 });
       }
@@ -759,16 +830,30 @@ class UploadManager {
         // finished — if only the preview upload is failing, uploadId/parts
         // must be preserved so a later retry doesn't wastefully re-upload
         // the original from scratch.
+        const currentItem = this.items.get(item.id);
+        const photoId = currentItem?.photoId;
+        const fileType = currentItem?.fileType;
         if (!originalDone) {
-          const photoId = this.items.get(item.id)?.photoId;
-          const fileType = this.items.get(item.id)?.fileType;
-          if (photoId && currentUploadId) {
-            cancelUploadApi(item.eventSlug, photoId, { uploadId: currentUploadId, fileType }).catch(cleanupErr => {
+          if (photoId && (currentUploadId || currentItem?.previewUploadId)) {
+            cancelUploadApi(item.eventSlug, photoId, {
+              uploadId: currentUploadId,
+              previewUploadId: currentItem?.previewUploadId,
+              fileType,
+            }).catch(cleanupErr => {
               console.warn('[UploadManager] Failed to abort orphaned multipart upload:', cleanupErr);
             });
           }
           updates.uploadId = undefined;
           updates.parts = [];
+          updates.previewUploadId = undefined;
+        } else if (photoId && currentItem?.previewUploadId) {
+          cancelUploadApi(item.eventSlug, photoId, {
+            previewUploadId: currentItem.previewUploadId,
+            fileType,
+          }).catch(cleanupErr => {
+            console.warn('[UploadManager] Failed to abort orphaned preview upload:', cleanupErr);
+          });
+          updates.previewUploadId = undefined;
         }
       }
 
@@ -800,23 +885,36 @@ class UploadManager {
     }
   }
 
-  private async uploadPreview(eventSlug: string, photoId: string, previewBlob: Blob) {
+  private async uploadPreview(item: UploadQueueItem, photoId: string, previewBlob: Blob) {
+    if (item.previewUploadId) {
+      await cancelUploadApi(item.eventSlug, photoId, {
+        previewUploadId: item.previewUploadId,
+        fileType: item.fileType,
+      }).catch((err) => {
+        console.warn('[UploadManager] Failed to abort previous preview upload:', err);
+      });
+    }
+
     const { uploadId } = await startUpload(
-      eventSlug, photoId, `${photoId}_preview.jpg`,
+      item.eventSlug, photoId, `${photoId}_preview.jpg`,
       undefined, undefined, undefined, undefined, undefined, undefined,
       undefined, undefined, undefined, undefined, undefined, undefined,
       undefined, true,
     );
+    this.updateItem(item.id, { previewUploadId: uploadId });
+    await updateQueueItem(item.id, { previewUploadId: uploadId });
     const parts: Array<{ partNumber: number; etag: string }> = [];
     const totalParts = Math.ceil(previewBlob.size / CHUNK_SIZE);
     for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
       const start = (partNumber - 1) * CHUNK_SIZE;
       const end = Math.min(start + CHUNK_SIZE, previewBlob.size);
       const chunk = previewBlob.slice(start, end);
-      const { etag } = await this.uploadChunkWithRetry(eventSlug, photoId, uploadId, partNumber, chunk, true);
+      const { etag } = await this.uploadChunkWithRetry(item.eventSlug, photoId, uploadId, partNumber, chunk, true);
       parts.push({ partNumber, etag });
     }
-    await completeUpload(eventSlug, photoId, uploadId, parts, true);
+    await completeUpload(item.eventSlug, photoId, uploadId, parts, true);
+    this.updateItem(item.id, { previewUploadId: undefined });
+    await updateQueueItem(item.id, { previewUploadId: undefined });
   }
 
   private async uploadChunkWithRetry(

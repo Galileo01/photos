@@ -7,6 +7,7 @@ import SEO from '../components/SEO';
 import { useRefresh } from '../contexts/RefreshContext';
 import { getFeaturedPhotos, getPreviewUrl } from '../api';
 import { getConfig } from '../config';
+import { useTranslation } from 'react-i18next';
 
 interface FeaturedPhoto {
   id: string;
@@ -44,6 +45,7 @@ function writeCachedFeatured(photos: FeaturedPhoto[]): void {
 }
 
 export default function Landing() {
+  const { t } = useTranslation(['common', 'events']);
   const { registerRefreshHandler, unregisterRefreshHandler } = useRefresh();
   // Seed from cache so the first paint already has photos when available.
   const [featuredPhotos, setFeaturedPhotos] = useState<FeaturedPhoto[]>(readCachedFeatured);
@@ -115,7 +117,7 @@ export default function Landing() {
     '@type': 'WebSite',
     name: config.appName,
     url: window.location.origin,
-    description: 'Professional event photography featuring ice skating, inline skating, and sports events',
+    description: t('landing.seoDescription'),
     author: {
       '@type': 'Person',
       name: config.brandName,
@@ -132,18 +134,18 @@ export default function Landing() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       <SEO
         title={`${config.appName} - ${config.brandName} | Professional Event Photography`}
-        description="Professional event photography featuring ice skating, inline skating, and sports events. Browse high-quality photos and download your favorites."
+        description={t('landing.seoDescription')}
         keywords={`photography, sports photography, ice skating photography, inline skating, event photography, ${config.brandName}`}
         url={`https://${config.domain}/`}
         structuredData={structuredData}
       />
       {/* Hero Section with Slideshow */}
       <main>
-        <section className="relative h-screen bg-black overflow-hidden" aria-label="Hero">
+        <section className="relative h-screen bg-black overflow-hidden" aria-label={t('landing.heroLabel')}>
           {loading ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <Loader2 className="w-12 h-12 animate-spin text-white mb-4" />
-              <div className="text-white text-xl">Loading...</div>
+              <div className="text-white text-xl">{t('landing.loading')}</div>
             </div>
           ) : featuredPhotos.length > 0 ? (
             <>
@@ -179,7 +181,7 @@ export default function Landing() {
             </>
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-white text-xl">No featured photos available</div>
+              <div className="text-white text-xl">{t('landing.noFeatured')}</div>
             </div>
           )}
           
@@ -189,26 +191,26 @@ export default function Landing() {
               {config.brandName}
             </h1>
             <p className="text-xl md:text-2xl text-white mb-8 text-center px-4 drop-shadow-lg">
-              Capturing moments in sports and nature
+              {t('landing.tagline')}
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 w-full max-w-2xl px-4">
               <Link
                 to="/events"
                 className="bg-white/90 backdrop-blur-sm text-gray-900 px-6 sm:px-8 py-4 rounded-xl text-base sm:text-lg font-semibold hover:bg-white active:scale-95 transition-all text-center flex-1 shadow-lg"
               >
-                View Galleries
+                {t('events:viewGalleries')}
               </Link>
               <Link
                 to="/favorites"
                 className="bg-white/20 backdrop-blur-sm border-2 border-white/40 text-white px-6 sm:px-8 py-4 rounded-xl text-base sm:text-lg font-semibold hover:bg-white/30 active:scale-95 transition-all flex items-center justify-center gap-2 flex-1 shadow-lg"
               >
-                <Heart className="w-5 h-5" aria-hidden="true" /> <span>Favorites</span>
+                <Heart className="w-5 h-5" aria-hidden="true" /> <span>{t('navigation.favorites')}</span>
               </Link>
               <Link
                 to="/map"
                 className="bg-white/20 backdrop-blur-sm border-2 border-white/40 text-white px-6 sm:px-8 py-4 rounded-xl text-base sm:text-lg font-semibold hover:bg-white/30 active:scale-95 transition-all flex items-center justify-center gap-2 flex-1 shadow-lg"
               >
-                <MapPin className="w-5 h-5" aria-hidden="true" /> <span>Map</span>
+                <MapPin className="w-5 h-5" aria-hidden="true" /> <span>{t('navigation.map')}</span>
               </Link>
             </div>
           </div>
@@ -219,20 +221,19 @@ export default function Landing() {
             style={{ opacity: Math.max(0, 1 - scrollY / 300) }}
             aria-hidden="true"
           >
-            <span className="text-white text-sm mb-2 drop-shadow-lg">Scroll to explore</span>
+            <span className="text-white text-sm mb-2 drop-shadow-lg">{t('landing.scroll')}</span>
             <ChevronDown className="w-8 h-8 text-white drop-shadow-lg" />
           </div>
         </section>
 
-        {/* Contact Section */}
-        <section className="bg-white dark:bg-gray-800 py-16" aria-label="Contact">
-          <div className="max-w-4xl mx-auto px-4">
-            <h2 className="text-3xl font-bold mb-8 text-center text-gray-900 dark:text-white">Get in Touch</h2>
-            
-            <ContactForm formId="xdalnwpj" />
-
-          </div>
-        </section>
+        {import.meta.env.MODE !== 'personal' && (
+          <section className="bg-white dark:bg-gray-800 py-16" aria-label={t('landing.contactLabel')}>
+            <div className="max-w-4xl mx-auto px-4">
+              <h2 className="text-3xl font-bold mb-8 text-center text-gray-900 dark:text-white">{t('landing.contact')}</h2>
+              <ContactForm formId="xdalnwpj" />
+            </div>
+          </section>
+        )}
       </main>
 
       <Footer />

@@ -1,0 +1,95 @@
+{
+  "language": {
+    "label": "Language",
+    "english": "English",
+    "chinese": "简体中文"
+  },
+  "navigation": {
+    "events": "Events",
+    "favorites": "Favorites",
+    "map": "Map",
+    "timeline": "Timeline",
+    "settings": "Settings",
+    "adminDashboard": "Admin Dashboard",
+    "login": "Login",
+    "logout": "Logout",
+    "userMenu": "User menu"
+  },
+  "actions": {
+    "back": "Back",
+    "cancel": "Cancel",
+    "close": "Close",
+    "continue": "Continue",
+    "copy": "Copy",
+    "delete": "Delete",
+    "download": "Download",
+    "edit": "Edit",
+    "remove": "Remove",
+    "retry": "Retry",
+    "save": "Save",
+    "search": "Search",
+    "select": "Select",
+    "upload": "Upload",
+    "loadMore": "Load More"
+  },
+  "states": {
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "uploading": "Uploading...",
+    "processing": "Processing...",
+    "unknown": "Unknown",
+    "noResults": "No results found",
+    "offline": "You are offline — cached content is shown",
+    "developmentMode": "Development mode",
+    "deleting": "Deleting...",
+    "copying": "Copying...",
+    "sending": "Sending..."
+  },
+  "media": {
+    "photo": "Photo",
+    "photo_other": "Photos",
+    "video": "Video",
+    "video_other": "Videos",
+    "all": "All media"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "loadFailed": "Failed to load data. Please try again.",
+    "network": "Network error. Check your connection and try again.",
+    "notFound": "Not found",
+    "permissionDenied": "You do not have permission to perform this action."
+  },
+  "confirm": {
+    "confirm": "Confirm",
+    "cancel": "Cancel"
+  },
+  "landing": {
+    "tagline": "Capturing moments in sports and nature",
+    "loading": "Loading...",
+    "noFeatured": "No featured photos available",
+    "scroll": "Scroll to explore",
+    "contact": "Get in Touch",
+    "heroLabel": "Featured photos",
+    "contactLabel": "Contact",
+    "seoDescription": "Browse event photos and videos, and download your favorites."
+  },
+  "contact": {
+    "thanks": "Thanks for your message!",
+    "replySoon": "I'll get back to you soon.",
+    "name": "Name",
+    "email": "Email",
+    "message": "Message",
+    "send": "Send Message"
+  },
+  "androidPrompt": {
+    "title": "Get the App!",
+    "description": "Download our Android app for faster uploads, offline access, and more features.",
+    "playStore": "Get it on Google Play",
+    "continueBrowser": "Continue in browser"
+  },
+  "footer": {
+    "usage": "Photo Usage Rights",
+    "privacy": "Privacy Policy",
+    "copyright": "© {{year}} {{holder}}. All rights reserved."
+  }
+}

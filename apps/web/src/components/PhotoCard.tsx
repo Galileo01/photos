@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Heart, Star, Check } from 'lucide-react';
 import ProgressiveImage from './ProgressiveImage';
 import ProgressiveVideo from './ProgressiveVideo';
 import { getPreviewUrl, getVideoPosterUrl, downloadOriginal, downloadSmall } from '../api';
 import type { Photo } from '../types';
+import { localeForLanguage } from '../i18n/language';
 
 interface PhotoCardProps {
   photo: Photo;
@@ -46,6 +48,7 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
   albumMode = false,
   forceControlsVisible = false,
 }) => {
+  const { t, i18n } = useTranslation('photos');
   const isVideo = photo.file_type === 'video/mp4';
   const [supportsHover, setSupportsHover] = useState(true);
   const [touchControlsVisible, setTouchControlsVisible] = useState(false);
@@ -159,7 +162,7 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
                   ? 'bg-blue-600 border-blue-600 text-white opacity-100 pointer-events-auto'
                   : `bg-black/40 border-white/70 text-transparent hover:text-white ${controlsRevealClass}`
               }`}
-              aria-label={isSelected ? 'Deselect photo' : 'Select photo'}
+              aria-label={isSelected ? t('selection.deselectPhoto') : t('selection.selectPhoto')}
             >
               <Check className="w-4 h-4" />
             </button>
@@ -173,7 +176,7 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
                 onToggleFavorite(photo.id, userFavorites.has(photo.id));
               }}
               className={`absolute top-2 right-2 bg-black/45 backdrop-blur-sm text-white p-1.5 rounded-full transition-all duration-150 hover:bg-black/60 ${controlsRevealClass}`}
-              title={userFavorites.has(photo.id) ? 'Remove from favorites' : 'Add to favorites'}
+              title={userFavorites.has(photo.id) ? t('favorites.remove') : t('favorites.add')}
             >
               <Heart className={`w-4 h-4 ${userFavorites.has(photo.id) ? 'fill-red-500 text-red-500' : ''}`} />
             </button>
@@ -189,7 +192,7 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
               className={`absolute ${showAddToFavorites ? 'right-12' : 'right-2'} top-2 backdrop-blur-sm text-white p-1.5 rounded-full transition-all duration-150 ${
                 photo.is_featured ? 'bg-yellow-500/90 hover:bg-yellow-500' : 'bg-black/45 hover:bg-black/60'
               } ${controlsRevealClass}`}
-              title={photo.is_featured ? 'Remove from featured' : 'Mark as featured'}
+              title={photo.is_featured ? t('featured.remove') : t('featured.mark')}
             >
               <Star className={`w-4 h-4 ${photo.is_featured ? 'fill-white' : ''}`} />
             </button>
@@ -264,7 +267,7 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
                       : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 active:bg-gray-400 dark:active:bg-gray-500'
                   }`}
                 >
-                  {isSelected ? '✓ Selected' : 'Select'}
+                  {isSelected ? `✓ ${t('selection.selected')}` : t('selection.select')}
                 </button>
               )}
               {showAddToFavorites && onToggleFavorite && (
@@ -275,10 +278,10 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
                       ? 'bg-red-500 text-white shadow-sm'
                       : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 active:bg-gray-400 dark:active:bg-gray-500'
                   }`}
-                  title={userFavorites.has(photo.id) ? 'Remove from favorites' : 'Add to favorites'}
+                  title={userFavorites.has(photo.id) ? t('favorites.remove') : t('favorites.add')}
                 >
                   <Heart className={`w-3 h-3 sm:w-4 sm:h-4 ${userFavorites.has(photo.id) ? 'fill-white' : ''}`} />
-                  {!showSelection && <span>{userFavorites.has(photo.id) ? 'Favorited' : 'Favorite'}</span>}
+                  {!showSelection && <span>{userFavorites.has(photo.id) ? t('favorites.favorited') : t('favorites.favorite')}</span>}
                 </button>
               )}
               {showFeatured && onToggleFeatured && (
@@ -289,10 +292,10 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
                       ? 'bg-yellow-500 text-white shadow-sm'
                       : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 active:bg-gray-400 dark:active:bg-gray-500'
                   }`}
-                  title={photo.is_featured ? 'Remove from featured' : 'Mark as featured'}
+                  title={photo.is_featured ? t('featured.remove') : t('featured.mark')}
                 >
                   <Star className={`w-3 h-3 sm:w-4 sm:h-4 ${photo.is_featured ? 'fill-white' : ''}`} />
-                  {!(showSelection || showAddToFavorites) && <span>{photo.is_featured ? 'Featured' : 'Feature'}</span>}
+                  {!(showSelection || showAddToFavorites) && <span>{photo.is_featured ? t('featured.featured') : t('featured.feature')}</span>}
                 </button>
               )}
             </div>
@@ -315,8 +318,8 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
               <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
-              <span className="hidden sm:inline">Original</span>
-              <span className="sm:hidden">Full</span>
+              <span className="hidden sm:inline">{t('download.original')}</span>
+              <span className="sm:hidden">{t('download.full')}</span>
             </button>
             {!isVideo && (
               <button
@@ -334,7 +337,7 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
                 <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                Small
+                {t('download.small')}
               </button>
             )}
             {/* Remove from favorites button in same row */}
@@ -342,7 +345,7 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
               <button
                 onClick={() => onRemoveFavorite(photo.id)}
                 className="px-2 py-2 text-red-500 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 active:bg-red-200 dark:active:bg-red-900/40 rounded-lg transition-all active:scale-95"
-                title="Remove from favorites"
+                title={t('favorites.remove')}
               >
                 <Heart className="w-4 h-4 fill-current" />
               </button>
@@ -355,7 +358,7 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
         </p>
         {photo.capture_time && (
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            {new Date(photo.capture_time).toLocaleDateString()}
+            {new Date(photo.capture_time).toLocaleDateString(localeForLanguage(i18n.resolvedLanguage))}
           </p>
         )}
       </div>

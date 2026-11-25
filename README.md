@@ -1,5 +1,7 @@
 # Photo Sharing Application
 
+**English** | [简体中文](README.zh.md)
+
 A full-stack, white-label photo gallery application built with React + Vite + Tailwind (frontend) and Cloudflare Workers (backend), with D1 database and R2 storage.
 
 > **Open Source & Self-Hosted**: Deploy your own branded photo sharing platform with complete control over your data.
@@ -26,6 +28,7 @@ A full-stack, white-label photo gallery application built with React + Vite + Ta
 - **Styling**: Tailwind CSS 4
 - **Routing**: React Router v7
 - **State**: React hooks + Context API
+- **Localization**: `i18next` + `react-i18next` with English and Simplified Chinese resources
 - **Storage**: IndexedDB (via Dexie) for upload queue persistence
 - **Maps**: Leaflet + React-Leaflet (with marker clustering)
 - **Image Processing**: Client-side Canvas API for preview/blur-placeholder generation, RAW decoding (`libraw-wasm`), and in-browser image editing (`react-filerobot-image-editor` + `react-konva`)
@@ -56,6 +59,7 @@ A full-stack, white-label photo gallery application built with React + Vite + Ta
 - 🎯 **Photo Navigation**: Seamless browsing without page reload (pushState)
 - ⌨️ **Keyboard Navigation**: Arrow keys, Escape to close, slideshow mode
 - 📱 **Mobile-Friendly**: Touch gestures, native share API, and responsive design
+- 🌐 **Interface Languages**: Switch between English and Simplified Chinese from the user menu or Settings; changes apply immediately and the preference is remembered locally
 - 📸 **EXIF Metadata**: Full camera, lens, and settings display
 - 🗺️ **Map View**: Browse all photos with GPS coordinates on interactive map (marker clustering)
 - 🕒 **Timeline View**: Chronological, infinite-scroll view across all accessible events
@@ -117,17 +121,16 @@ A full-stack, white-label photo gallery application built with React + Vite + Ta
 - 🎬 **Video Editing**: Trim, crop, and adjust playback speed client-side via FFmpeg WASM
 - 📤 **Replace Original/Preview**: Save edits back to R2 without re-uploading from scratch
 
-#### Organization, Search & AI (`/admin/trash`, `/admin/duplicates`, `/admin/albums`, `/admin/people`, `/admin/activity`, `/search`)
+#### Organization, Search & AI (`/admin/trash`, `/admin/duplicates`, `/admin/people`, `/admin/activity`, `/search`)
 
 - 🗑️ **Trash**: View, restore, or permanently delete trashed photos; empty the whole trash at once
 - 🔁 **Duplicate Detection**: Groups photos with byte-identical content (SHA-256), even across events
-- 📁 **Albums**: Cross-event photo collections, independent of the event structure
 - 🧑‍🤝‍🧑 **People**: Faces are detected client-side at upload (`@vladmandic/human`) and grouped into
   named people via an hourly server-side clustering job — no Workers AI face model needed
 - 🔍 **Unified Search**: Full-text search (filenames, location, AI captions) with optional semantic
   re-ranking, powered by Cloudflare Workers AI's free daily allocation (captions + embeddings)
 - 🕰️ **Memories**: "On this day" carousel on the Timeline page (pure SQL, no AI)
-- 📜 **Activity Feed**: Polling-based log of favorites, event/album creation, and photo trashing
+- 📜 **Activity Feed**: Polling-based log of favorites, event creation, and photo trashing
 - 📲 **Android Auto-Backup**: Pick a device folder to automatically back up new photos/videos to
   an event in the background (Storage Access Framework)
 
@@ -345,7 +348,7 @@ wrangler d1 create photos-db
 # Copy the database_id from output and update wrangler.toml
 # Update both [[d1_databases]] and [[env.production.d1_databases]] with the same database_id
 
-# Run ALL migrations on production database, in order (there are 21 files in migrations/ as of this writing)
+# Run ALL migrations on the production database in filename order
 for file in ./migrations/*.sql; do wrangler d1 execute photos-db --remote --file="$file"; done
 
 # Verify migrations were successful:
@@ -470,8 +473,8 @@ This tells Pages to serve all routes except `/api/*` and `/media/*`, which are h
 
 ## Database Schema
 
-The schema is defined incrementally across 21 files in [migrations/](migrations/) (from `001_init.sql`
-through `021_add_file_hash.sql`). Key tables beyond the original `events`/`photos`/`tags`/`event_tags`:
+The schema is defined incrementally by the ordered SQL files in [migrations/](migrations/). Key
+tables beyond the original `events`/`photos`/`tags`/`event_tags` include:
 
 - `event_collaborators` - per-event collaborator records with roles/capabilities
 - `collaboration_history` - audit log of invite/role/removal actions
@@ -495,13 +498,18 @@ photos-storage/
 ├── original/
 │   └── {eventSlug}/
 │       └── {photoId}.{jpg|mp4|cr2|nef|...}   (original file, extension follows source file type)
-└── preview/
+├── preview/
+│   └── {eventSlug}/
+│       ├── {photoId}.jpg                     (client-generated image preview, max 1920px, 85% quality)
+│       └── {photoId}.mp4                     (scheduled 1080p H.264 video derivative, when generated)
+└── poster/
     └── {eventSlug}/
-        └── {photoId}.jpg                     (client-generated, max 1920px, 85% quality JPEG)
+        └── {photoId}.jpg                     (video poster frame)
 ```
 
 > **Note**: Preview/original files are **not watermarked** and there is no server-side resizing -
-> both derivatives are produced client-side at upload time. A legacy `ig/{eventSlug}/{photoId}.jpg`
+> image previews are produced client-side at upload time, while the maintenance script can create
+> video previews and poster frames. A legacy `ig/{eventSlug}/{photoId}.jpg`
 > key space still exists only for cleanup purposes (deleting a photo also attempts to remove any
 > leftover `ig/` object from older uploads); no code path writes new `ig/` files. See
 > [docs/image-processing.md](docs/image-processing.md) for details.
@@ -540,7 +548,7 @@ See [docs/configuration.md](docs/configuration.md) for the complete environment 
 ## Known Limitations & Future Enhancements
 
 1. **No Server-Side Watermarking**: Previews are generated client-side (resized JPEG only); there is no watermark overlay applied anywhere in the current codebase, despite some older code comments/route names implying one.
-2. **No Video Transcoding**: Videos are stored and served as uploaded (`.mp4`/`.mov`); editing (trim/crop/speed) happens client-side via FFmpeg WASM, but there's no server-side transcoding pipeline.
+2. **No Adaptive Video Streaming**: Originals are preserved and a scheduled maintenance job can create a single 1080p H.264 derivative; there is no multi-bitrate streaming pipeline such as Cloudflare Stream.
 3. **Thumbnail Optimization**: Could add smaller thumbnails for the gallery grid instead of reusing the 1920px preview.
 4. **iOS**: Only the Android native app is currently packaged/released; the web app itself works in iOS Safari.
 
@@ -551,7 +559,7 @@ See [docs/configuration.md](docs/configuration.md) for the complete environment 
 **Worker not connecting to D1**:
 
 - Ensure `database_id` in wrangler.toml matches your D1 database
-- Check that ALL migrations have been run (21 files in `migrations/`, run in filename order)
+- Check that every SQL file in `migrations/` has been run in filename order
 - Verify bindings in `wrangler dev` output
 - Run: `wrangler d1 execute photos-db-local --local --command "SELECT name FROM sqlite_master WHERE type='table';"`
   - Should show: events, photos, tags, event_tags, event_collaborators, invite_links, and others

@@ -22,8 +22,13 @@ function stripConsole(): Plugin {
 export default defineConfig({
   plugins: [react(), stripConsole()],
   server: {
+    host: '127.0.0.1',
     port: 5173,
     strictPort: true,
+    allowedHosts: ['photos.1354541676.workers.dev'],
+    hmr: {
+      path: '/__vite_hmr',
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8787',

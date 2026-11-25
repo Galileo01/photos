@@ -17,6 +17,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { config } from '../config';
 import { useToast } from '../components/Toast';
 import { haptics } from '../utils/haptics';
+import { useTranslation } from 'react-i18next';
 
 /** Group photos by date (YYYY-MM-DD from capture_time), newest first */
 function groupByDate(photos: FavoritePhoto[]): { dates: string[]; groups: Map<string, FavoritePhoto[]> } {
@@ -32,6 +33,7 @@ function groupByDate(photos: FavoritePhoto[]): { dates: string[]; groups: Map<st
 }
 
 const MyFavorites: React.FC = () => {
+  const { t, i18n } = useTranslation(['common', 'photos']);
   const { isAuthenticated, loading: authLoading, login } = useAuth();
   const { registerRefreshHandler, unregisterRefreshHandler } = useRefresh();
   const toast = useToast();
@@ -152,7 +154,7 @@ const MyFavorites: React.FC = () => {
       setPhotos(favorites);
       setError(null);
     } catch (err) {
-      setError('Failed to load your favorites');
+      setError(t('photos:favorites.loadFailed'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -171,21 +173,21 @@ const MyFavorites: React.FC = () => {
         await haptics.light();
         setPhotos(prev => prev.filter(p => p.id !== photoId));
       } catch {
-        toast.showError('Failed to remove from favorites');
+        toast.showError(t('photos:favorites.removeFailed'));
       }
     } else {
       try {
         await toggleFavoriteAPI(photoId, false);
         await haptics.light();
       } catch {
-        toast.showError('Failed to update favorite');
+        toast.showError(t('photos:favorites.updateFailed'));
       }
     }
   };
 
   const downloadAllFavorites = async () => {
     if (photos.length === 0) {
-      toast.showInfo('No favorites to download');
+      toast.showInfo(t('photos:favorites.noDownload'));
       return;
     }
 
@@ -217,7 +219,7 @@ const MyFavorites: React.FC = () => {
       toast.showSuccess(`Downloaded ${Object.keys(photosByEvent).length} ZIP file(s)`);
     } catch {
       await haptics.error();
-      toast.showError('Failed to download some files. Please try again.');
+      toast.showError(t('photos:favorites.downloadFailed'));
     } finally {
       setDownloading(false);
     }
@@ -236,16 +238,16 @@ const MyFavorites: React.FC = () => {
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-8 flex-grow w-full">
           <div className="text-center py-16 px-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg max-w-2xl mx-auto">
             <Heart className="w-20 h-20 text-red-500 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Login Required</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{t('photos:favorites.loginRequired')}</h1>
             <p className="text-gray-600 dark:text-gray-400 text-lg mb-8">
-              You need to be logged in to view and manage your favorites.
+              {t('photos:favorites.loginDescription')}
             </p>
             <button
               onClick={login}
               className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 active:scale-95 transition-all font-semibold shadow-md"
             >
               <LogIn className="w-5 h-5" />
-              Login with Cloudflare Access
+              {t('photos:favorites.loginAction')}
             </button>
           </div>
         </div>
@@ -267,10 +269,10 @@ const MyFavorites: React.FC = () => {
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <Heart className="w-8 h-8 fill-red-500 text-red-500" />
-              My Favorites
+              {t('photos:favorites.title')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              {photos.length} photo{photos.length !== 1 ? 's' : ''} you've favorited
+              {t('photos:favorites.count', { count: photos.length })}
             </p>
           </div>
           {photos.length > 0 && (
@@ -280,7 +282,7 @@ const MyFavorites: React.FC = () => {
               className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 active:scale-95 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed disabled:active:scale-100 flex items-center justify-center gap-2 font-semibold shadow-md"
             >
               <Download className="w-5 h-5" />
-              {downloading ? 'Downloading...' : 'Download All'}
+              {downloading ? t('photos:favorites.downloading') : t('photos:favorites.downloadAll')}
             </button>
           )}
         </div>
@@ -298,13 +300,13 @@ const MyFavorites: React.FC = () => {
         {!loading && !error && photos.length === 0 && (
           <div className="text-center py-16 px-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
             <Heart className="w-20 h-20 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-900 dark:text-white text-xl font-semibold mb-2">No favorites yet</p>
-            <p className="text-gray-500 dark:text-gray-400 text-base mb-8 max-w-md mx-auto">Click the heart icon on photos to add them to your favorites</p>
+            <p className="text-gray-900 dark:text-white text-xl font-semibold mb-2">{t('photos:favorites.empty')}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-base mb-8 max-w-md mx-auto">{t('photos:favorites.emptyHint')}</p>
             <Link
               to="/events"
               className="inline-block px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 active:scale-95 transition-all font-semibold shadow-md"
             >
-              Browse Photos
+              {t('photos:favorites.browseEvents')}
             </Link>
           </div>
         )}
@@ -314,8 +316,8 @@ const MyFavorites: React.FC = () => {
             {dates.map((date) => {
               const datePhotos = groups.get(date) || [];
               const formattedDate = date === 'Unknown'
-                ? 'Unknown Date'
-                : new Date(date).toLocaleDateString('en-US', {
+                ? t('photos:favorites.unknownDate')
+                : new Date(date).toLocaleDateString(i18n.resolvedLanguage, {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
@@ -344,8 +346,9 @@ const MyFavorites: React.FC = () => {
                       {formattedDate}
                     </h2>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                      {datePhotos.length} {datePhotos.length === 1 ? 'photo' : 'photos'}
-                      {byEvent.size > 1 && ` from ${byEvent.size} events`}
+                      {byEvent.size > 1
+                        ? t('photos:favorites.daySummary', { photoCount: datePhotos.length, eventCount: byEvent.size })
+                        : t('photos:favorites.dayCount', { count: datePhotos.length })}
                     </p>
                   </div>
 

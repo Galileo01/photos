@@ -1,16 +1,35 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Copy, Trash2, Users, Loader2, Hash, FolderCheck } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { getDuplicatePhotos, deletePhoto, bulkDeletePhotos, getPreviewUrl, getOriginalUrl, syncPeopleAcrossDuplicates, getPhotosMissingFileHash, setPhotoFileHash } from '../api';
 import { computeFileHash } from '../imageUtils';
 import type { DuplicateGroup, DuplicatePhoto } from '../api';
 
+type DuplicateMessageKey =
+  | 'admin:duplicatePhotos.errors.load'
+  | 'admin:duplicatePhotos.errors.delete'
+  | 'admin:duplicatePhotos.errors.bulkDelete'
+  | 'admin:duplicatePhotos.errors.syncPeople'
+  | 'admin:duplicatePhotos.errors.backfill'
+  | 'admin:duplicatePhotos.success.movedToTrash'
+  | 'admin:duplicatePhotos.success.bulkMovedToTrash'
+  | 'admin:duplicatePhotos.success.peopleSynced'
+  | 'admin:duplicatePhotos.success.peopleAlreadySynced'
+  | 'admin:duplicatePhotos.success.hashesBackfilled';
+
+type DuplicateMessage = {
+  key: DuplicateMessageKey;
+  values?: Record<string, string | number>;
+};
+
 const AdminDuplicates: React.FC = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const [groups, setGroups] = useState<DuplicateGroup[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [error, setError] = useState<DuplicateMessage | null>(null);
+  const [success, setSuccess] = useState<DuplicateMessage | null>(null);
   const [deletingPhoto, setDeletingPhoto] = useState<DuplicatePhoto | null>(null);
   const [syncingPeople, setSyncingPeople] = useState(false);
   const [backfilling, setBackfilling] = useState(false);
@@ -34,7 +53,7 @@ const AdminDuplicates: React.FC = () => {
       setGroups(data);
       setError(null);
     } catch (err) {
-      setError('Failed to load duplicates');
+      setError({ key: 'admin:duplicatePhotos.errors.load' });
       console.error(err);
     } finally {
       setLoading(false);
@@ -50,10 +69,10 @@ const AdminDuplicates: React.FC = () => {
           .filter((g) => g.photos.length > 1)
       );
       setDeletingPhoto(null);
-      setSuccess('Photo moved to Trash');
+      setSuccess({ key: 'admin:duplicatePhotos.success.movedToTrash' });
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError('Failed to delete photo');
+      setError({ key: 'admin:duplicatePhotos.errors.delete' });
       console.error(err);
     }
   };
@@ -104,11 +123,14 @@ const AdminDuplicates: React.FC = () => {
           .filter((g) => g.photos.length > 1)
       );
       setConfirmingBulkDelete(false);
-      setSuccess(`Moved ${deletedCount} duplicate photo${deletedCount === 1 ? '' : 's'} to Trash, keeping the copies in the selected album.`);
+      setSuccess({
+        key: 'admin:duplicatePhotos.success.bulkMovedToTrash',
+        values: { count: deletedCount },
+      });
       setTimeout(() => setSuccess(null), 5000);
       setKeepEventSlug('');
     } catch (err) {
-      setError('Failed to bulk-delete duplicates');
+      setError({ key: 'admin:duplicatePhotos.errors.bulkDelete' });
       console.error(err);
     } finally {
       setBulkDeleting(false);
@@ -120,14 +142,15 @@ const AdminDuplicates: React.FC = () => {
       setSyncingPeople(true);
       setError(null);
       const { groupsSynced, tagsAdded } = await syncPeopleAcrossDuplicates();
-      setSuccess(
-        tagsAdded > 0
-          ? `Synced people across ${groupsSynced} duplicate group${groupsSynced === 1 ? '' : 's'} (${tagsAdded} tag${tagsAdded === 1 ? '' : 's'} added).`
-          : 'Everything is already in sync — no missing tags found.'
-      );
+      setSuccess(tagsAdded > 0
+        ? {
+            key: 'admin:duplicatePhotos.success.peopleSynced',
+            values: { groupCount: groupsSynced, tagCount: tagsAdded },
+          }
+        : { key: 'admin:duplicatePhotos.success.peopleAlreadySynced' });
       setTimeout(() => setSuccess(null), 5000);
     } catch (err) {
-      setError('Failed to sync people across duplicates');
+      setError({ key: 'admin:duplicatePhotos.errors.syncPeople' });
       console.error(err);
     } finally {
       setSyncingPeople(false);
@@ -177,11 +200,14 @@ const AdminDuplicates: React.FC = () => {
         cursor = nextCursor;
       }
 
-      setSuccess(`Backfilled file hashes for ${done} photo${done === 1 ? '' : 's'}. Reloading duplicates…`);
+      setSuccess({
+        key: 'admin:duplicatePhotos.success.hashesBackfilled',
+        values: { count: done },
+      });
       setTimeout(() => setSuccess(null), 5000);
       await loadData();
     } catch (err) {
-      setError('Failed to backfill file hashes');
+      setError({ key: 'admin:duplicatePhotos.errors.backfill' });
       console.error(err);
     } finally {
       setBackfilling(false);
@@ -195,36 +221,36 @@ const AdminDuplicates: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <Link to="/admin" className="text-blue-600 hover:text-blue-700 mb-4 inline-block">
-            ← Back to Admin
+            {t('admin:duplicatePhotos.back')}
           </Link>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-            <Copy className="w-8 h-8" /> Duplicate Photos
+            <Copy className="w-8 h-8" /> {t('admin:duplicatePhotos.title')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Photos with identical content (same file bytes), possibly uploaded to different
-            events. {totalDuplicates > 0 && `${totalDuplicates} extra cop${totalDuplicates === 1 ? 'y' : 'ies'} found.`}
+            {t('admin:duplicatePhotos.description')}{' '}
+            {totalDuplicates > 0 && t('admin:duplicatePhotos.extraCopies', { count: totalDuplicates })}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               onClick={handleBackfillHashes}
               disabled={backfilling}
-              title="Computes a content hash for every photo AND video that's missing one, so duplicate detection can find them — downloads each affected original once to hash it (videos can be large, so this may transfer a lot of data), retroactively"
+              title={t('admin:duplicatePhotos.backfillTooltip')}
               className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition flex items-center gap-2 disabled:opacity-50"
             >
               {backfilling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Hash className="w-4 h-4" />}
               {backfilling
-                ? `Hashing… (${backfillProgress?.done ?? 0})`
-                : 'Backfill file hashes'}
+                ? t('admin:duplicatePhotos.hashing', { count: backfillProgress?.done ?? 0 })
+                : t('admin:duplicatePhotos.backfill')}
             </button>
             {groups.length > 0 && (
               <button
                 onClick={handleSyncPeople}
                 disabled={syncingPeople}
-                title="If a person is already identified (face or manual tag) on one copy of a duplicate photo, add them to every other copy that's missing it — no need to redo tagging per event"
+                title={t('admin:duplicatePhotos.syncPeopleTooltip')}
                 className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition flex items-center gap-2 disabled:opacity-50"
               >
                 {syncingPeople ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
-                {syncingPeople ? 'Syncing…' : 'Sync people across duplicates'}
+                {syncingPeople ? t('admin:duplicatePhotos.syncing') : t('admin:duplicatePhotos.syncPeople')}
               </button>
             )}
           </div>
@@ -233,12 +259,10 @@ const AdminDuplicates: React.FC = () => {
         {groups.length > 0 && (
           <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2 mb-2">
-              <FolderCheck className="w-4 h-4" /> Keep an album, delete its duplicates elsewhere
+              <FolderCheck className="w-4 h-4" /> {t('admin:duplicatePhotos.keepEventTitle')}
             </h2>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-              Pick an event below — every OTHER-event copy of a photo that's already in that
-              event will be moved to Trash in one go, instead of clicking through each
-              duplicate set individually.
+              {t('admin:duplicatePhotos.keepEventDescription')}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <select
@@ -246,7 +270,7 @@ const AdminDuplicates: React.FC = () => {
                 onChange={(e) => setKeepEventSlug(e.target.value)}
                 className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg"
               >
-                <option value="">Select an album…</option>
+                <option value="">{t('admin:duplicatePhotos.selectEvent')}</option>
                 {eventOptions.map((e) => (
                   <option key={e.slug} value={e.slug}>{e.name}</option>
                 ))}
@@ -258,8 +282,8 @@ const AdminDuplicates: React.FC = () => {
               >
                 <Trash2 className="w-4 h-4" />
                 {keepEventSlug
-                  ? `Delete ${photosToDeleteForKeptEvent.length} duplicate${photosToDeleteForKeptEvent.length === 1 ? '' : 's'} elsewhere`
-                  : 'Delete duplicates elsewhere'}
+                  ? t('admin:duplicatePhotos.moveElsewhereCount', { count: photosToDeleteForKeptEvent.length })
+                  : t('admin:duplicatePhotos.moveElsewhere')}
               </button>
             </div>
           </div>
@@ -267,23 +291,23 @@ const AdminDuplicates: React.FC = () => {
 
         {success && (
           <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
-            {success}
+            {t(success.key, success.values ?? {})}
           </div>
         )}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
+            {t(error.key, error.values ?? {})}
           </div>
         )}
 
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-            <p className="mt-4 text-gray-600">Scanning for duplicates...</p>
+            <p className="mt-4 text-gray-600">{t('admin:duplicatePhotos.scanning')}</p>
           </div>
         ) : groups.length === 0 ? (
           <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
-            <p className="text-gray-600 dark:text-gray-400">No duplicate photos found 🎉</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('admin:duplicatePhotos.empty')}</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -303,7 +327,7 @@ const AdminDuplicates: React.FC = () => {
                       <button
                         onClick={() => setDeletingPhoto(photo)}
                         className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition"
-                        title="Move to Trash"
+                        title={t('admin:duplicatePhotos.moveToTrash')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -321,11 +345,11 @@ const AdminDuplicates: React.FC = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full">
               <div className="p-6">
-                <h2 className="text-2xl font-bold mb-4 text-red-600">🗑️ Move to Trash</h2>
+                <h2 className="text-2xl font-bold mb-4 text-red-600">🗑️ {t('admin:duplicatePhotos.moveToTrash')}</h2>
                 <p className="mb-4 text-gray-700 dark:text-gray-300">
-                  Move {photosToDeleteForKeptEvent.length} duplicate photo{photosToDeleteForKeptEvent.length === 1 ? '' : 's'} to
-                  Trash, keeping the copies already in <strong>{eventOptions.find((e) => e.slug === keepEventSlug)?.name}</strong>?
-                  This cannot be undone (though Trash items are recoverable for a while).
+                  {t('admin:duplicatePhotos.bulkConfirmBefore', { count: photosToDeleteForKeptEvent.length })}{' '}
+                  <strong>{eventOptions.find((e) => e.slug === keepEventSlug)?.name}</strong>
+                  {t('admin:duplicatePhotos.bulkConfirmAfter')}
                 </p>
                 <div className="flex gap-3">
                   <button
@@ -334,14 +358,14 @@ const AdminDuplicates: React.FC = () => {
                     className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {bulkDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {bulkDeleting ? 'Deleting…' : 'Move to Trash'}
+                    {bulkDeleting ? t('common:states.deleting') : t('admin:duplicatePhotos.moveToTrash')}
                   </button>
                   <button
                     onClick={() => setConfirmingBulkDelete(false)}
                     disabled={bulkDeleting}
                     className="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition disabled:opacity-50"
                   >
-                    Cancel
+                    {t('common:actions.cancel')}
                   </button>
                 </div>
               </div>
@@ -353,22 +377,24 @@ const AdminDuplicates: React.FC = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
               <div className="p-6">
-                <h2 className="text-2xl font-bold mb-4 text-red-600">🗑️ Move to Trash</h2>
+                <h2 className="text-2xl font-bold mb-4 text-red-600">🗑️ {t('admin:duplicatePhotos.moveToTrash')}</h2>
                 <p className="mb-4 text-gray-700">
-                  Move <strong>{deletingPhoto.original_filename}</strong> ({deletingPhoto.event_name}) to Trash?
+                  {t('admin:duplicatePhotos.singleConfirmBefore')}{' '}
+                  <strong>{deletingPhoto.original_filename}</strong> ({deletingPhoto.event_name})
+                  {t('admin:duplicatePhotos.singleConfirmAfter')}
                 </p>
                 <div className="flex gap-3">
                   <button
                     onClick={() => handleDelete(deletingPhoto)}
                     className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                   >
-                    Move to Trash
+                    {t('admin:duplicatePhotos.moveToTrash')}
                   </button>
                   <button
                     onClick={() => setDeletingPhoto(null)}
                     className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
                   >
-                    Cancel
+                    {t('common:actions.cancel')}
                   </button>
                 </div>
               </div>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { updateUserProfile } from '../api';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Blocks the app behind a full-screen, non-dismissable modal until a logged-in user has set a
@@ -20,6 +21,7 @@ const RequireProfileName: React.FC = () => {
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation(['account', 'common']);
 
   if (!isAuthenticated || !user || user.name?.trim() || location.pathname === '/logout') {
     return null;
@@ -29,7 +31,7 @@ const RequireProfileName: React.FC = () => {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed || !trimmed.includes(' ')) {
-      setError('Please enter your full name (first and last).');
+      setError(t('account:profile.fullNameRequired'));
       return;
     }
     setSaving(true);
@@ -39,7 +41,7 @@ const RequireProfileName: React.FC = () => {
       updateUser(updatedUser);
     } catch (err) {
       console.error('Failed to save name:', err);
-      setError('Failed to save your name. Please try again.');
+      setError(t('account:profile.fullNameSaveFailed'));
     } finally {
       setSaving(false);
     }
@@ -48,17 +50,16 @@ const RequireProfileName: React.FC = () => {
   return (
     <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-sm w-full p-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">One more step</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('account:profile.fullNameTitle')}</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Please enter your full name so people can recognize you as a collaborator and see who
-          uploaded a photo.
+          {t('account:profile.fullNameDescription')}
         </p>
         <form onSubmit={handleSubmit}>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Full name (e.g. Jane Doe)"
+            placeholder={t('account:profile.fullNamePlaceholder')}
             autoFocus
             disabled={saving}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -69,7 +70,7 @@ const RequireProfileName: React.FC = () => {
             disabled={saving}
             className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
           >
-            {saving ? 'Saving…' : 'Continue'}
+            {saving ? t('common:states.saving') : t('common:actions.continue')}
           </button>
         </form>
       </div>

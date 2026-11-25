@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
 import { config } from '../config';
+import { useTranslation } from 'react-i18next';
 
 export default function Footer() {
+  const { t } = useTranslation('common');
+
   return (
     <footer className="bg-gray-900 text-white py-8 mt-auto">
       <div className="max-w-4xl mx-auto px-4 text-center">
@@ -10,17 +13,17 @@ export default function Footer() {
             to="/usage" 
             className="text-blue-400 hover:text-blue-300 transition-colors text-sm font-medium"
           >
-            Photo Usage Rights
+            {t('footer.usage')}
           </Link>
           <Link 
             to="/privacy" 
             className="text-blue-400 hover:text-blue-300 transition-colors text-sm font-medium"
           >
-            Privacy Policy
+            {t('footer.privacy')}
           </Link>
         </div>
         <p className="text-gray-400 text-sm">
-          © {new Date().getFullYear()} {config.copyrightHolder}. All rights reserved.
+          {t('footer.copyright', { year: new Date().getFullYear(), holder: config.copyrightHolder })}
         </p>
       </div>
     </footer>

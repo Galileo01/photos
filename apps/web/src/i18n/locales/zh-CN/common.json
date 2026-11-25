@@ -1,0 +1,95 @@
+{
+  "language": {
+    "label": "语言",
+    "english": "English",
+    "chinese": "简体中文"
+  },
+  "navigation": {
+    "events": "活动",
+    "favorites": "收藏",
+    "map": "地图",
+    "timeline": "时间线",
+    "settings": "设置",
+    "adminDashboard": "管理后台",
+    "login": "登录",
+    "logout": "退出登录",
+    "userMenu": "用户菜单"
+  },
+  "actions": {
+    "back": "返回",
+    "cancel": "取消",
+    "close": "关闭",
+    "continue": "继续",
+    "copy": "复制",
+    "delete": "删除",
+    "download": "下载",
+    "edit": "编辑",
+    "remove": "移除",
+    "retry": "重试",
+    "save": "保存",
+    "search": "搜索",
+    "select": "选择",
+    "upload": "上传",
+    "loadMore": "加载更多"
+  },
+  "states": {
+    "loading": "正在加载…",
+    "saving": "正在保存…",
+    "uploading": "正在上传…",
+    "processing": "正在处理…",
+    "unknown": "未知",
+    "noResults": "未找到结果",
+    "offline": "网络连接已断开，当前显示缓存内容",
+    "developmentMode": "开发模式",
+    "deleting": "正在删除...",
+    "copying": "正在复制...",
+    "sending": "正在发送..."
+  },
+  "media": {
+    "photo": "照片",
+    "photo_other": "照片",
+    "video": "视频",
+    "video_other": "视频",
+    "all": "全部媒体"
+  },
+  "errors": {
+    "generic": "操作失败，请重试。",
+    "loadFailed": "加载失败，请重试。",
+    "network": "网络异常，请检查连接后重试。",
+    "notFound": "未找到相关内容",
+    "permissionDenied": "你没有执行此操作的权限。"
+  },
+  "confirm": {
+    "confirm": "确认",
+    "cancel": "取消"
+  },
+  "landing": {
+    "tagline": "记录运动与自然中的精彩瞬间",
+    "loading": "正在加载…",
+    "noFeatured": "暂无精选照片",
+    "scroll": "向下滚动浏览",
+    "contact": "联系我们",
+    "heroLabel": "精选照片",
+    "contactLabel": "联系方式",
+    "seoDescription": "浏览活动照片和视频，并下载你收藏的内容。"
+  },
+  "contact": {
+    "thanks": "感谢你的留言！",
+    "replySoon": "我会尽快回复。",
+    "name": "姓名",
+    "email": "邮箱",
+    "message": "留言",
+    "send": "发送留言"
+  },
+  "androidPrompt": {
+    "title": "下载 Android 应用",
+    "description": "使用 Android 应用可获得更快的上传、离线访问和更多功能。",
+    "playStore": "前往 Google Play 下载",
+    "continueBrowser": "继续使用浏览器"
+  },
+  "footer": {
+    "usage": "照片使用说明",
+    "privacy": "隐私政策",
+    "copyright": "© {{year}} {{holder}}。保留所有权利。"
+  }
+}

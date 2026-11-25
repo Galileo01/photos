@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
+import { useTranslation } from 'react-i18next';
 
 const DISMISSED_KEY = 'android_app_prompt_dismissed';
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=nl.thijsvtol.photos';
 
 export const AndroidAppPrompt: React.FC = () => {
+  const { t, i18n } = useTranslation('common');
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -72,7 +74,7 @@ export const AndroidAppPrompt: React.FC = () => {
         <button
           onClick={handleDismiss}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-          aria-label="Close"
+          aria-label={t('actions.close')}
         >
           <X className="w-6 h-6" />
         </button>
@@ -80,10 +82,10 @@ export const AndroidAppPrompt: React.FC = () => {
         {/* Content */}
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Get the App!
+            {t('androidPrompt.title')}
           </h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
-            Download our Android app for a better experience with faster uploads, offline access, and more features.
+            {t('androidPrompt.description')}
           </p>
 
           {/* Play Store Badge */}
@@ -95,8 +97,8 @@ export const AndroidAppPrompt: React.FC = () => {
             rel="noopener noreferrer"
           >
             <img
-              src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
-              alt="Get it on Google Play"
+              src={`https://play.google.com/intl/${i18n.resolvedLanguage === 'zh-CN' ? 'zh-cn' : 'en_us'}/badges/static/images/badges/${i18n.resolvedLanguage === 'zh-CN' ? 'zh-CN' : 'en'}_badge_web_generic.png`}
+              alt={t('androidPrompt.playStore')}
               className="h-16 w-auto"
             />
           </a>
@@ -107,7 +109,7 @@ export const AndroidAppPrompt: React.FC = () => {
               onClick={handleDismiss}
               className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 underline"
             >
-              Continue in browser
+              {t('androidPrompt.continueBrowser')}
             </button>
           </div>
         </div>

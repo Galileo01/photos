@@ -1,5 +1,7 @@
 # Contributing to Photos
 
+**English** | [简体中文](CONTRIBUTING.zh.md)
+
 Thank you for your interest in contributing to this project! 🎉
 
 ## Quick Start

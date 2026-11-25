@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { WifiOff } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Subtle offline banner shown when network is unavailable.
  * Only displayed on native platforms to avoid confusion on web.
  */
 export function OfflineBanner() {
+  const { t } = useTranslation('common');
   const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
@@ -42,7 +44,7 @@ export function OfflineBanner() {
   return (
     <div className="fixed top-0 left-0 right-0 z-[70] bg-amber-500 text-white text-center py-1.5 px-4 text-xs font-medium flex items-center justify-center gap-1.5 shadow-sm">
       <WifiOff className="w-3.5 h-3.5" />
-      <span>Geen internetverbinding — je ziet gecachte content</span>
+      <span>{t('states.offline')}</span>
     </div>
   );
 }

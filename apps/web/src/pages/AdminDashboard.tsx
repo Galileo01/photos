@@ -8,16 +8,17 @@ import Navbar from '../components/Navbar';
 import EventFormModal from '../components/EventFormModal';
 import { getEvents, getAdminStats } from '../api';
 import type { Event, AdminStats } from '../types';
+import { useTranslation } from 'react-i18next';
 
 // Admin tool pages linked from the header. Kept as data so the row stays
 // readable and wraps cleanly on narrow screens instead of overflowing.
 const TOOL_LINKS = [
-  { to: '/admin/activity', label: 'Activity', icon: Activity, color: 'bg-indigo-600 hover:bg-indigo-700' },
-  { to: '/admin/people', label: 'People', icon: Users, color: 'bg-pink-600 hover:bg-pink-700' },
-  { to: '/admin/duplicates', label: 'Duplicates', icon: Copy, color: 'bg-teal-600 hover:bg-teal-700' },
-  { to: '/admin/trash', label: 'Trash', icon: Trash2, color: 'bg-gray-600 hover:bg-gray-700' },
-  { to: '/admin/tags', label: 'Manage Tags', icon: Tag, color: 'bg-purple-600 hover:bg-purple-700' },
-];
+  { to: '/admin/activity', label: 'admin:activity', icon: Activity, color: 'bg-indigo-600 hover:bg-indigo-700' },
+  { to: '/admin/people', label: 'admin:people', icon: Users, color: 'bg-pink-600 hover:bg-pink-700' },
+  { to: '/admin/duplicates', label: 'admin:duplicates', icon: Copy, color: 'bg-teal-600 hover:bg-teal-700' },
+  { to: '/admin/trash', label: 'admin:trash', icon: Trash2, color: 'bg-gray-600 hover:bg-gray-700' },
+  { to: '/admin/tags', label: 'admin:dashboard.manageTags', icon: Tag, color: 'bg-purple-600 hover:bg-purple-700' },
+] as const;
 
 /**
  * Admin index: site-wide stats, the event list, and links to the admin tool
@@ -30,6 +31,7 @@ const TOOL_LINKS = [
  * regeneration, geocoding or collaboration history, and no dark-mode styles).
  */
 const AdminDashboard: React.FC = () => {
+  const { t } = useTranslation(['admin', 'events']);
   const [events, setEvents] = useState<Event[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,7 +56,7 @@ const AdminDashboard: React.FC = () => {
       setStats(statsData);
       setError(null);
     } catch (err) {
-      setError('Failed to load data');
+      setError(t('admin:dashboard.loadFailed'));
       console.error('[AdminDashboard] Error loading data:', err);
     } finally {
       setLoading(false);
@@ -74,7 +76,7 @@ const AdminDashboard: React.FC = () => {
       return (
         <span className="ml-2 px-2 py-1 text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 rounded-full whitespace-nowrap flex items-center gap-1">
           <Lock className="w-3 h-3" />
-          Password
+          {t('admin:dashboard.password')}
         </span>
       );
     }
@@ -82,7 +84,7 @@ const AdminDashboard: React.FC = () => {
       return (
         <span className="ml-2 px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full whitespace-nowrap flex items-center gap-1">
           <Globe className="w-3 h-3" />
-          Public
+          {t('events:public')}
         </span>
       );
     }
@@ -90,26 +92,26 @@ const AdminDashboard: React.FC = () => {
       return (
         <span className="ml-2 px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full whitespace-nowrap flex items-center gap-1">
           <Globe className="w-3 h-3" />
-          Invite Only
+          {t('events:inviteOnly')}
         </span>
       );
     }
     return (
       <span className="ml-2 px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded-full whitespace-nowrap flex items-center gap-1">
         <Lock className="w-3 h-3" />
-        Private
+        {t('events:private')}
       </span>
     );
   };
 
   const statCards = stats
     ? [
-        { icon: Calendar, tint: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400', value: stats.totalEvents || 0, label: 'Total Events' },
-        { icon: Camera, tint: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400', value: stats.totalPhotos || 0, label: 'Total Photos' },
-        { icon: Heart, tint: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400', value: stats.totalFavorites || 0, label: 'Total Favorites' },
-        { icon: HardDrive, tint: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400', value: formatBytes(stats.storageBytes), label: 'Storage (est.)' },
-        { icon: Globe, tint: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400', value: stats.publicEvents || 0, label: 'Public Events' },
-        { icon: Lock, tint: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400', value: stats.privateEvents || 0, label: 'Private Events' },
+        { icon: Calendar, tint: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400', value: stats.totalEvents || 0, label: t('admin:totalEvents') },
+        { icon: Camera, tint: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400', value: stats.totalPhotos || 0, label: t('admin:totalPhotos') },
+        { icon: Heart, tint: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400', value: stats.totalFavorites || 0, label: t('admin:dashboard.totalFavorites') },
+        { icon: HardDrive, tint: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400', value: formatBytes(stats.storageBytes), label: t('admin:dashboard.storage') },
+        { icon: Globe, tint: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400', value: stats.publicEvents || 0, label: t('admin:dashboard.publicEvents') },
+        { icon: Lock, tint: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400', value: stats.privateEvents || 0, label: t('admin:dashboard.privateEvents') },
       ]
     : [];
 
@@ -119,12 +121,12 @@ const AdminDashboard: React.FC = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-8">
         <div className="mb-6 sm:mb-8">
           <Link to="/events" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-3 sm:mb-4 inline-flex items-center gap-1 text-sm sm:text-base transition">
-            ← Back to Public View
+            {t('admin:dashboard.back')}
           </Link>
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mt-4">
             <div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm sm:text-base">Manage events and view statistics</p>
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">{t('admin:title')}</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm sm:text-base">{t('admin:dashboard.subtitle')}</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {TOOL_LINKS.map(({ to, label, icon: Icon, color }) => (
@@ -134,7 +136,7 @@ const AdminDashboard: React.FC = () => {
                   className={`px-4 py-2 ${color} text-white rounded-lg transition text-sm flex items-center gap-2 shadow-sm hover:shadow`}
                 >
                   <Icon className="w-4 h-4" />
-                  <span>{label}</span>
+                  <span>{t(label)}</span>
                 </Link>
               ))}
             </div>
@@ -166,20 +168,20 @@ const AdminDashboard: React.FC = () => {
         )}
 
         <div className="flex justify-between items-center gap-4 mb-4">
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Events</h2>
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">{t('admin:dashboard.events')}</h2>
           <button
             onClick={() => setFormEvent(null)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm sm:text-base flex items-center justify-center gap-2 shadow-sm hover:shadow"
           >
             <Plus className="w-4 h-4" />
-            Create Event
+            {t('events:create')}
           </button>
         </div>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16">
             <Loader2 className="w-12 h-12 animate-spin text-blue-600 dark:text-blue-400 mb-4" />
-            <p className="text-gray-600 dark:text-gray-400">Loading events...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('admin:dashboard.loadingEvents')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -190,11 +192,11 @@ const AdminDashboard: React.FC = () => {
                   {visibilityBadge(event)}
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 mb-2 text-sm">
-                  Slug: <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs">{event.slug}</code>
+                  {t('admin:dashboard.slug')}: <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs">{event.slug}</code>
                 </p>
                 <p className="text-gray-600 dark:text-gray-400 mb-2 text-sm flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  {event.inferred_date || 'Not set'}
+                  {event.inferred_date || t('admin:dashboard.notSet')}
                 </p>
                 {event.description && (
                   <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm italic">{event.description}</p>
@@ -205,18 +207,18 @@ const AdminDashboard: React.FC = () => {
                     className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm shadow-sm hover:shadow"
                   >
                     <Eye className="w-4 h-4" />
-                    View Gallery
+                    {t('admin:dashboard.viewGallery')}
                   </Link>
                   <Link
                     to={`/admin/events/${event.slug}/photos`}
                     className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm shadow-sm hover:shadow"
                   >
                     <Camera className="w-4 h-4" />
-                    Photos
+                    {t('admin:dashboard.photos')}
                   </Link>
                   <button
                     onClick={() => setFormEvent(event)}
-                    title="Event settings"
+                    title={t('admin:dashboard.eventSettings')}
                     aria-label={`Settings for ${event.name}`}
                     className="px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm flex items-center justify-center shadow-sm hover:shadow"
                   >

@@ -24,6 +24,8 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
+import nl.thijsvtol.photos.R;
+
 /**
  * The background folder-sync engine: scan → hash → dedupe → upload.
  *
@@ -394,7 +396,9 @@ public class FolderSyncWorker extends Worker {
         List<SyncLedger.Entry> pending = ledger.pendingForHashing(folder.eventSlug, MAX_HASHES_PER_RUN);
         if (pending.isEmpty()) return;
 
-        notifier.showScanning("Checking " + pending.size() + " new file(s)…");
+        notifier.showScanning(getApplicationContext().getResources().getQuantityString(
+            R.plurals.sync_new_files, pending.size(), pending.size()
+        ));
         Log.i(TAG, "hashing " + pending.size() + " file(s) for " + folder.eventSlug);
 
         List<SyncLedger.Entry> needsServerCheck = new ArrayList<>();

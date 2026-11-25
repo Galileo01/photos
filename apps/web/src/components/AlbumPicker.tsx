@@ -1,11 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Upload, Folder, Lock, Users } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import ModalOverlay from './ModalOverlay';
-import { Event } from '../types';
+import type { Event } from '../types';
 import { getEvents } from '../api';
 import EventThumbnail from './EventThumbnail';
 import { haptics } from '../utils/haptics';
+import { localeForLanguage } from '../i18n/language';
 
 interface AlbumPickerProps {
   isOpen: boolean;
@@ -20,10 +22,13 @@ interface AlbumPickerProps {
  * AlbumPicker component displays a modal to select an album for uploading shared photos.
  * Only shows albums where the user has upload permissions (admin or collaborator).
  */
-export default function AlbumPicker({ isOpen, onClose, onSelectAlbum, excludeSlug, title = 'Select Album', description = 'Choose an album to upload your photos' }: AlbumPickerProps) {
+export default function AlbumPicker({ isOpen, onClose, onSelectAlbum, excludeSlug, title, description }: AlbumPickerProps) {
+  const { t, i18n } = useTranslation(['events', 'common']);
+  const resolvedTitle = title || t('events:eventPicker.title');
+  const resolvedDescription = description || t('events:eventPicker.description');
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const startYRef = useRef(0);
   const isPullingRef = useRef(false);
@@ -39,7 +44,7 @@ export default function AlbumPicker({ isOpen, onClose, onSelectAlbum, excludeSlu
   const loadEvents = async () => {
     try {
       setLoading(true);
-      setError(null);
+      setError(false);
       
       // getEvents already filters by permissions on the backend
       // It returns only events where user is admin or collaborator
@@ -47,7 +52,7 @@ export default function AlbumPicker({ isOpen, onClose, onSelectAlbum, excludeSlu
       setEvents(excludeSlug ? fetchedEvents.filter(e => e.slug !== excludeSlug) : fetchedEvents);
     } catch (err) {
       console.error('Failed to load albums:', err);
-      setError('Failed to load albums. Please try again.');
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -130,7 +135,7 @@ export default function AlbumPicker({ isOpen, onClose, onSelectAlbum, excludeSlu
   if (!isOpen) return null;
 
   return (
-    <ModalOverlay onClose={onClose} label={title}>
+    <ModalOverlay onClose={onClose} label={resolvedTitle}>
     <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 animate-in fade-in duration-200">
       <div 
         ref={modalRef}
@@ -149,16 +154,16 @@ export default function AlbumPicker({ isOpen, onClose, onSelectAlbum, excludeSlu
           <div className="flex-1 min-w-0">
             <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <Upload className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-              <span>{title}</span>
+              <span>{resolvedTitle}</span>
             </h2>
             <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              {description}
+              {resolvedDescription}
             </p>
           </div>
           <button 
             onClick={onClose} 
             className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition flex-shrink-0"
-            aria-label="Close modal"
+            aria-label={t('common:actions.close')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -174,12 +179,12 @@ export default function AlbumPicker({ isOpen, onClose, onSelectAlbum, excludeSlu
 
           {error && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-center">
-              <p className="text-red-800 dark:text-red-200">{error}</p>
+              <p className="text-red-800 dark:text-red-200">{t('events:eventPicker.loadFailed')}</p>
               <button
                 onClick={loadEvents}
                 className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
               >
-                Try Again
+                {t('common:actions.retry')}
               </button>
             </div>
           )}
@@ -187,9 +192,9 @@ export default function AlbumPicker({ isOpen, onClose, onSelectAlbum, excludeSlu
           {!loading && !error && events.length === 0 && (
             <div className="text-center py-12">
               <Folder className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-600 dark:text-gray-400 mb-2">No albums available</p>
+              <p className="text-gray-600 dark:text-gray-400 mb-2">{t('events:eventPicker.empty')}</p>
               <p className="text-sm text-gray-500 dark:text-gray-500">
-                You need to be an admin or collaborator to upload photos
+                {t('events:eventPicker.permissionHint')}
               </p>
             </div>
           )}
@@ -234,7 +239,7 @@ export default function AlbumPicker({ isOpen, onClose, onSelectAlbum, excludeSlu
                     
                     {event.inferred_date && (
                       <p className="text-xs text-gray-600 dark:text-gray-400">
-                        {new Date(event.inferred_date).toLocaleDateString('en-US', {
+                        {new Date(event.inferred_date).toLocaleDateString(localeForLanguage(i18n.resolvedLanguage), {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric',
@@ -267,7 +272,7 @@ export default function AlbumPicker({ isOpen, onClose, onSelectAlbum, excludeSlu
             onClick={onClose}
             className="w-full px-4 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition text-sm font-medium"
           >
-            Cancel
+            {t('common:actions.cancel')}
           </button>
         </div>
       </div>

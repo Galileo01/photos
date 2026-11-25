@@ -24,6 +24,8 @@ import { config } from '../config';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/Toast';
 import { haptics } from '../utils/haptics';
+import { useTranslation } from 'react-i18next';
+import { localeForLanguage } from '../i18n/language';
 
 /** Group photos by date (YYYY-MM-DD from capture_time) */
 function groupByDate(photos: Photo[]): { dates: string[]; groups: Map<string, Photo[]> } {
@@ -40,17 +42,18 @@ function groupByDate(photos: Photo[]): { dates: string[]; groups: Map<string, Ph
 
 /** Format a date string for display — memoized at module level to avoid repeated locale formatting */
 const dateFormatCache = new Map<string, string>();
-function formatDate(date: string): string {
-  const cached = dateFormatCache.get(date);
+function formatDate(date: string, locale: string): string {
+  const cacheKey = `${locale}:${date}`;
+  const cached = dateFormatCache.get(cacheKey);
   if (cached) return cached;
   const dateObj = new Date(date);
-  const formatted = dateObj.toLocaleDateString('en-US', {
+  const formatted = dateObj.toLocaleDateString(locale, {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
-  dateFormatCache.set(date, formatted);
+  dateFormatCache.set(cacheKey, formatted);
   return formatted;
 }
 
@@ -102,6 +105,7 @@ function LazyDateGroup({ photoCount, children }: { photoCount: number; children:
 }
 
 const Timeline: React.FC = () => {
+  const { t, i18n } = useTranslation(['photos', 'common', 'events']);
   const { isAuthenticated, user } = useAuth();
   // Timeline is cross-event and viewable by anyone, and (unlike EventGallery) it has no per-event
   // collaborator-role data — so bulk actions split into three tiers by the GLOBAL admin flag only:
@@ -188,7 +192,7 @@ const Timeline: React.FC = () => {
         return next;
       });
     } catch {
-      toast.showError('Failed to update favorite');
+      toast.showError(t('events:galleryPage.errors.favorite'));
     }
   };
 
@@ -214,7 +218,7 @@ const Timeline: React.FC = () => {
       toast.showSuccess(`Downloaded ${selected.length} photos`);
       clearSelection();
     } catch {
-      toast.showError('Download failed');
+      toast.showError(t('photos:download.failed'));
     } finally {
       setDownloading(false);
     }
@@ -244,9 +248,9 @@ const Timeline: React.FC = () => {
         return next;
       });
       await haptics.light();
-      toast.showSuccess(allAlreadyFavorited ? 'Removed selected from favorites' : 'Added selected to favorites');
+      toast.showSuccess(allAlreadyFavorited ? t('events:galleryPage.success.favoritesRemoved') : t('events:galleryPage.success.favoritesAdded'));
     } catch {
-      toast.showError('Failed to update favorites');
+      toast.showError(t('events:galleryPage.errors.favorite'));
     }
   };
 
@@ -260,9 +264,9 @@ const Timeline: React.FC = () => {
       await Promise.all(ids.map((id) => setPhotoFeatured(id, shouldEnable)));
       setPhotos((prev) => prev.map((p) => (selectedPhotos.has(p.id) ? { ...p, is_featured: shouldEnable } : p)));
       await haptics.light();
-      toast.showSuccess(shouldEnable ? 'Marked selected as featured' : 'Removed featured from selected');
+      toast.showSuccess(shouldEnable ? t('events:galleryPage.success.featuredAdded') : t('events:galleryPage.success.featuredRemoved'));
     } catch {
-      toast.showError('Failed to update featured status');
+      toast.showError(t('events:galleryPage.errors.featured'));
     }
   };
 
@@ -289,7 +293,7 @@ const Timeline: React.FC = () => {
       toast.showSuccess(`Deleted ${result.deletedCount} photo(s)`);
     } catch {
       await haptics.error();
-      toast.showError('Failed to delete photos');
+      toast.showError(t('events:galleryPage.errors.delete'));
     } finally {
       setDeleting(false);
     }
@@ -308,7 +312,7 @@ const Timeline: React.FC = () => {
       toast.showSuccess(`Updated location for ${result.updatedCount} photo(s)`);
     } catch {
       await haptics.error();
-      toast.showError('Failed to update location');
+      toast.showError(t('events:galleryPage.errors.location'));
     }
   };
 
@@ -322,7 +326,7 @@ const Timeline: React.FC = () => {
     try {
       setNamedPeopleForTag(await getNamedPeople());
     } catch {
-      toast.showError('Failed to load people list');
+      toast.showError(t('events:galleryPage.errors.peopleLoad'));
     } finally {
       setNamedPeopleForTagLoading(false);
     }
@@ -350,7 +354,7 @@ const Timeline: React.FC = () => {
       toast.showSuccess(`Tagged people on ${result.taggedPhotoCount} photo(s)`);
     } catch {
       await haptics.error();
-      toast.showError('Failed to tag people');
+      toast.showError(t('events:galleryPage.errors.peopleTag'));
     } finally {
       setTaggingPeople(false);
     }
@@ -377,7 +381,7 @@ const Timeline: React.FC = () => {
       toast.showSuccess(`Removed people from ${result.clearedCount} photo(s)`);
     } catch {
       await haptics.error();
-      toast.showError('Failed to remove people');
+      toast.showError(t('events:galleryPage.errors.peopleRemove'));
     } finally {
       setTaggingPeople(false);
     }
@@ -396,7 +400,7 @@ const Timeline: React.FC = () => {
       toast.showSuccess(`Copied ${result.copiedCount} photo(s)`);
     } catch {
       await haptics.error();
-      toast.showError('Failed to copy photos');
+      toast.showError(t('events:galleryPage.errors.copy'));
     } finally {
       setCopying(false);
     }
@@ -425,7 +429,7 @@ const Timeline: React.FC = () => {
       console.error('Search failed:', err);
       setSearchResults([]);
       setSearchHasMore(false);
-      setSearchError('Search failed — please try again.');
+      setSearchError(t('photos:timeline.searchFailed'));
     } finally {
       setSearching(false);
     }
@@ -717,16 +721,20 @@ const Timeline: React.FC = () => {
         onClick={() => (allSelected ? clearSelection() : setSelectedPhotos(new Set(ids)))}
         className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition shrink-0"
       >
-        {allSelected ? 'Deselect all' : `Select all ${ids.length}`}
+        {allSelected ? t('photos:timeline.deselectAll') : t('photos:timeline.selectAll', { count: ids.length })}
       </button>
     );
   };
+  const selectedPeopleNames = new Intl.ListFormat(
+    localeForLanguage(i18n.resolvedLanguage),
+    { style: 'long', type: 'conjunction' }
+  ).format(selectedPeople.map((person) => person.name));
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       <SEO
-        title={`Timeline - ${config.brandName}`}
-        description="Browse all photos across events in chronological order"
+        title={`${t('photos:timeline.title')} - ${config.brandName}`}
+        description={t('photos:timeline.seoDescription')}
         url={window.location.origin + '/timeline'}
       />
       <Navbar />
@@ -735,10 +743,10 @@ const Timeline: React.FC = () => {
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
               <Clock className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-              Timeline
+              {t('photos:timeline.title')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm sm:text-base">
-              All photos across events, sorted by date
+              {t('photos:timeline.subtitle')}
             </p>
           </div>
 
@@ -752,7 +760,7 @@ const Timeline: React.FC = () => {
                     : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
-                All
+                {t('photos:timeline.all')}
               </button>
               <button
                 onClick={() => setFilterMode('me')}
@@ -762,7 +770,7 @@ const Timeline: React.FC = () => {
                     : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
-                Just {myDisplayName || 'me'}
+                {t('photos:timeline.justMe', { name: myDisplayName || t('photos:timeline.me') })}
               </button>
             </div>
           )}
@@ -778,7 +786,7 @@ const Timeline: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by filename, location, or description…"
+                placeholder={t('photos:timeline.searchPlaceholder')}
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -786,7 +794,7 @@ const Timeline: React.FC = () => {
               type="submit"
               className="px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition shrink-0"
             >
-              Search
+              {t('common:actions.search')}
             </button>
             {hasActiveSearch && (
               <button
@@ -794,7 +802,7 @@ const Timeline: React.FC = () => {
                 onClick={handleClearSearch}
                 className="px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition shrink-0"
               >
-                Clear
+                {t('photos:upload.clear')}
               </button>
             )}
           </form>
@@ -819,26 +827,26 @@ const Timeline: React.FC = () => {
               onClick={() => setShowPeoplePicker((v) => !v)}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition"
             >
-              <Users className="w-4 h-4" /> {selectedPeople.length > 0 ? 'Edit people' : 'Filter by people'}
+              <Users className="w-4 h-4" /> {selectedPeople.length > 0 ? t('photos:timeline.editPeople') : t('photos:timeline.filterPeople')}
             </button>
           </div>
 
           {showPeoplePicker && (
             <div className="mt-3 max-w-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                Selecting multiple people only shows photos where they're all together.
+                {t('photos:filters.peopleHint')}
               </p>
               <input
                 type="text"
                 value={peopleSearchQuery}
                 onChange={(e) => setPeopleSearchQuery(e.target.value)}
-                placeholder="Search people…"
+                placeholder={t('photos:filters.searchPeople')}
                 className="w-full mb-2 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 autoFocus
               />
               <div className="max-h-56 overflow-y-auto space-y-1">
                 {namedPeople.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 py-2 text-center">No named people yet.</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 py-2 text-center">{t('photos:filters.noPeople')}</p>
                 ) : (
                   namedPeople
                     .filter((p) => p.name.toLowerCase().includes(peopleSearchQuery.trim().toLowerCase()))
@@ -906,25 +914,21 @@ const Timeline: React.FC = () => {
             ) : filteredSearchResults && filteredSearchResults.length === 0 ? (
               <div className="text-center py-16">
                 <p className="text-gray-600 dark:text-gray-400">
-                  {searchQuery.trim() ? (
-                    <>
-                      No photos found for "{searchQuery}"
-                      {selectedPeople.length > 0 && <> with {selectedPeople.map((p) => p.name).join(' and ')}</>}. Search
-                      covers filenames, locations, and AI-generated descriptions (descriptions are added
-                      gradually in the background, so very recently uploaded photos may not be searchable
-                      by content yet).
-                    </>
-                  ) : selectedPeople.length > 0 ? (
-                    <>
-                      No photos found with {selectedPeople.map((p) => p.name).join(' and ')}
-                      {selectedPeople.length > 1 ? ' together' : ''}. This only searches photos in
-                      events you have access to.
-                    </>
-                  ) : filterMode === 'me' ? (
-                    `No results among just ${myDisplayName || 'your'} photos — try switching back to "All".`
-                  ) : (
-                    'No photos found.'
-                  )}
+                  {searchQuery.trim()
+                    ? t('photos:timeline.searchEmptyQuery', {
+                        query: searchQuery,
+                        people: selectedPeople.length > 0
+                          ? t('photos:timeline.withPeople', { names: selectedPeopleNames })
+                          : '',
+                      })
+                    : selectedPeople.length > 0
+                      ? t('photos:timeline.searchEmptyPeople', {
+                          names: selectedPeopleNames,
+                          together: selectedPeople.length > 1 ? t('photos:timeline.together') : '',
+                        })
+                      : filterMode === 'me'
+                        ? t('photos:timeline.searchEmptyMe', { name: myDisplayName || t('photos:timeline.you') })
+                        : t('photos:timeline.empty')}
                 </p>
               </div>
             ) : filteredSearchResults && filteredSearchResults.length > 0 ? (
@@ -972,7 +976,7 @@ const Timeline: React.FC = () => {
         ) : filteredPhotos.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-gray-600 dark:text-gray-400">
-              {filterMode === 'me' ? 'No photos of you found yet.' : 'No photos found.'}
+              {filterMode === 'me' ? t('photos:timeline.emptyMe') : t('photos:timeline.empty')}
             </p>
           </div>
         ) : (
@@ -980,12 +984,12 @@ const Timeline: React.FC = () => {
             <div className="flex items-center gap-3">
               {renderSelectAll(filteredPhotos.map((p) => p.id))}
               {selectedPhotos.size > 0 && (
-                <span className="text-sm text-gray-500 dark:text-gray-400">{selectedPhotos.size} selected</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{t('photos:timeline.selected', { count: selectedPhotos.size })}</span>
               )}
             </div>
             {dates.map((date) => {
               const datePhotos = groups.get(date) || [];
-              const formattedDate = formatDate(date);
+              const formattedDate = formatDate(date, localeForLanguage(i18n.resolvedLanguage));
 
               // Group photos by event slug within this date
               const byEvent = new Map<string, Photo[]>();
@@ -1080,8 +1084,8 @@ const Timeline: React.FC = () => {
           onSelectAlbum={(targetSlug) => {
             void handleBulkCopy(targetSlug);
           }}
-          title="Copy to Album"
-          description="Choose an album to copy the selected photos to"
+          title={t('events:galleryPage.copyTitle')}
+          description={t('events:galleryPage.copyDescription')}
         />
       )}
 
@@ -1125,13 +1129,13 @@ const Timeline: React.FC = () => {
               type="text"
               value={peopleTagSearchQuery}
               onChange={(e) => setPeopleTagSearchQuery(e.target.value)}
-              placeholder="Search people..."
+              placeholder={t('events:galleryPage.searchPeople')}
               className="mb-3 w-full px-3 py-2 bg-gray-700 text-white rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
             />
 
             <div className="flex-1 overflow-y-auto space-y-1 -mx-1 px-1">
               {namedPeopleForTagLoading ? (
-                <p className="text-gray-400 text-sm py-4 text-center">Loading people...</p>
+                <p className="text-gray-400 text-sm py-4 text-center">{t('events:galleryPage.loadingPeople')}</p>
               ) : namedPeopleForTag.length === 0 ? (
                 <p className="text-gray-400 text-sm py-4 text-center">
                   No named people yet — name someone in Admin → People first.
@@ -1163,7 +1167,7 @@ const Timeline: React.FC = () => {
                 disabled={taggingPeople}
                 className="w-full py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-950/40 rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
-                <UserX className="w-4 h-4" /> Remove all people (person: none)
+                <UserX className="w-4 h-4" /> {t('events:galleryPage.removeAllPeople')}
               </button>
             </div>
 
@@ -1173,14 +1177,14 @@ const Timeline: React.FC = () => {
                 disabled={taggingPeople}
                 className="flex-1 py-2.5 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition disabled:opacity-50"
               >
-                Cancel
+                {t('common:actions.cancel')}
               </button>
               <button
                 onClick={handleBulkTagPeople}
                 disabled={taggingPeople || peopleTagSelection.size === 0}
                 className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50"
               >
-                {taggingPeople ? 'Tagging...' : 'Tag People'}
+                {taggingPeople ? t('events:galleryPage.tagging') : t('events:galleryPage.tagPeople')}
               </button>
             </div>
           </div>

@@ -78,8 +78,8 @@ describe('CollaboratorManager', () => {
     render(<CollaboratorManager eventSlug={mockEventSlug} eventName={mockEventName} />);
     
     await waitFor(() => {
-      expect(screen.getByText('editor')).toBeInTheDocument();
-      expect(screen.getByText('uploader')).toBeInTheDocument();
+      expect(screen.getAllByText('Editor').some(element => element.tagName === 'SPAN')).toBe(true);
+      expect(screen.getAllByText('Uploader').some(element => element.tagName === 'SPAN')).toBe(true);
     });
   });
 

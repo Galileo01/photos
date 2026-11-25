@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Share2, UserPlus, X } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
@@ -22,6 +23,7 @@ interface ShareEventButtonProps {
  * Plus optional collaborator invite button.
  */
 export function ShareEventButton({ event, slug, photos, canInvite = false }: ShareEventButtonProps) {
+  const { t } = useTranslation('events');
   const [showCollaboratorModal, setShowCollaboratorModal] = useState(false);
   const toast = useToast();
 
@@ -44,16 +46,16 @@ export function ShareEventButton({ event, slug, photos, canInvite = false }: Sha
   const shareEvent = async () => {
     const domain = Capacitor.isNativePlatform() ? `https://${config.domain}` : window.location.origin;
     const url = `${domain}/events/${slug}`;
-    const text = `Check out ${event.name} photo gallery`;
+    const text = t('share.text', { name: event.name });
 
     // Use Capacitor native share on mobile app
     if (Capacitor.isNativePlatform()) {
       try {
         const shareOptions: { title?: string; text?: string; url?: string; dialogTitle?: string; files?: string[] } = {
-          title: event.name || 'Photo Gallery',
+          title: event.name || t('share.titleFallback'),
           text: text,
           url: url,
-          dialogTitle: 'Share album',
+          dialogTitle: t('share.dialogTitle'),
         };
 
         // Try to include a representative photo
@@ -93,7 +95,7 @@ export function ShareEventButton({ event, slug, photos, canInvite = false }: Sha
     if (navigator.share) {
       try {
         const shareData: ShareData = {
-          title: event.name || 'Photo Gallery',
+          title: event.name || t('share.titleFallback'),
           text: text,
           url: url,
         };
@@ -126,7 +128,7 @@ export function ShareEventButton({ event, slug, photos, canInvite = false }: Sha
 
     // Fallback: copy to clipboard
     await navigator.clipboard.writeText(url);
-    toast.showSuccess('Link copied to clipboard!');
+    toast.showSuccess(t('share.copied'));
   };
 
   return (
@@ -134,20 +136,20 @@ export function ShareEventButton({ event, slug, photos, canInvite = false }: Sha
       <button
         onClick={() => void shareEvent()}
         className="px-3 py-2 sm:px-4 sm:py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2 text-sm font-medium"
-        aria-label="Share album"
+        aria-label={t('share.albumAria')}
       >
         <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
-        <span className="hidden sm:inline">Share</span>
+        <span className="hidden sm:inline">{t('share.button')}</span>
       </button>
 
       {canInvite && (
         <button
           onClick={() => setShowCollaboratorModal(true)}
           className="px-3 py-2 sm:px-4 sm:py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2 text-sm font-medium"
-          aria-label="Manage collaborators"
+          aria-label={t('share.manageCollaborators')}
         >
           <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span className="hidden sm:inline">Invite</span>
+          <span className="hidden sm:inline">{t('share.invite')}</span>
         </button>
       )}
 
@@ -156,11 +158,11 @@ export function ShareEventButton({ event, slug, photos, canInvite = false }: Sha
           <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px]" onClick={() => setShowCollaboratorModal(false)} />
           <div className="relative z-[121] w-full max-w-4xl max-h-[90vh] overflow-y-auto overscroll-contain rounded-xl">
             <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-900 border border-b-0 border-gray-200 dark:border-gray-700 rounded-t-xl">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">Collaborators & Invite Links</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">{t('share.modalTitle')}</h3>
               <button
                 onClick={() => setShowCollaboratorModal(false)}
                 className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-                aria-label="Close collaborators modal"
+                aria-label={t('share.closeModal')}
               >
                 <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               </button>

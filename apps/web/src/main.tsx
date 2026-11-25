@@ -9,6 +9,7 @@ import { folderSyncService } from './services/folderSync';
 import { MobileAuthService } from './services/mobileAuth';
 import { startFaceDetectionQueue } from './faceDetectionQueue';
 import { attemptStaleChunkReload } from './lazyWithReload';
+import './i18n';
 
 // Self-heals from stale-hashed-chunk failures after a new deploy (see lazyWithReload.ts's doc
 // comment for the full 2026-08-03/04 "entire site is broken / MIME type text/html" incident

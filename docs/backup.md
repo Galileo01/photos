@@ -1,5 +1,7 @@
 # Off-site backup to Backblaze B2
 
+**English** | [简体中文](backup.zh.md)
+
 The primary copy of everything lives in **Cloudflare**:
 
 - **Blobs** (photos & videos) — the R2 bucket `photos-storage` (`PHOTOS_BUCKET`).

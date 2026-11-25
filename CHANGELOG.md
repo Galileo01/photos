@@ -1,9 +1,19 @@
 # Changelog
 
+**English** | [简体中文](CHANGELOG.zh.md)
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+
+- Runtime English and Simplified Chinese localization for the main Web flows using `i18next` and
+  `react-i18next`, with immediate language switching from the user menu or Settings, persisted
+  language preference, locale-aware date formatting, and matching bilingual Markdown documents.
 
 ## [2.0.0] - 2026-08-02
 

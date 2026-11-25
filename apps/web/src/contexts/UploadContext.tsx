@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { uploadManager, type RejectedUploadFile } from '../services/uploadManager';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { uploadManager, type AddUploadFilesResult } from '../services/uploadManager';
 import type { UploadQueueItem } from '../types';
 
 interface UploadContextValue {
@@ -7,9 +7,9 @@ interface UploadContextValue {
   queueItems: UploadQueueItem[];
   /** Items for a specific event slug */
   getItemsForSlug: (slug: string) => UploadQueueItem[];
-  /** Add files to the upload queue for an event. Resolves with any files that
-   *  were rejected as unsupported types, so callers can surface a toast. */
-  addFiles: (slug: string, files: FileList | File[]) => Promise<{ rejected: RejectedUploadFile[] }>;
+  /** Add files to the upload queue for an event. Resolves with unsupported and
+   *  duplicate files so callers can surface the appropriate toast. */
+  addFiles: (slug: string, files: FileList | File[]) => Promise<AddUploadFilesResult>;
   /** Retry a single failed item */
   retryUpload: (itemId: string) => void;
   /** Retry all failed items */
@@ -42,16 +42,12 @@ const UploadContext = createContext<UploadContextValue | null>(null);
 export const UploadProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [queueItems, setQueueItems] = useState<UploadQueueItem[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const initRef = useRef(false);
 
   useEffect(() => {
-    if (initRef.current) return;
-    initRef.current = true;
     // Initialise the singleton (loads from IndexedDB, sets up global listeners)
-    uploadManager.init();
+    void uploadManager.init();
     // Subscribe to all state changes from the manager
-    const unsubscribe = uploadManager.subscribe(setQueueItems);
-    return unsubscribe;
+    return uploadManager.subscribe(setQueueItems);
   }, []);
 
   // Fallback safety net: if a drag lands outside a dropzone's own

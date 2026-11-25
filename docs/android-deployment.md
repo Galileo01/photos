@@ -1,5 +1,7 @@
 # Android Deployment Setup Guide
 
+**English** | [简体中文](android-deployment.zh.md)
+
 This guide will help you set up automated Android app deployment to Google Play Store via GitHub Actions.
 
 ## Prerequisites

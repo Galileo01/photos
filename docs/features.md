@@ -1,5 +1,7 @@
 # Features Documentation
 
+**English** | [简体中文](features.zh.md)
+
 Comprehensive guide to all features in the photo sharing application.
 
 ## Core Features
@@ -64,7 +66,8 @@ Advanced photo upload system with automatic processing.
 - HEIC (.heic) - iOS photos
 - WebP (.webp)
 - RAW formats (.cr2, .nef, .arw, .dng, and other libraw-supported formats) - decoded client-side via `libraw-wasm` to generate a JPEG preview; the original RAW file is preserved as-is
-- Videos (.mp4, .mov) - stored and served as uploaded; no server-side transcoding
+- Videos (.mp4, .mov) - originals are preserved; a scheduled maintenance job can create a 1080p
+  H.264 playback derivative and poster frame
 
 **Metadata Preserved:**
 
@@ -117,6 +120,23 @@ upload, without needing external software.
 - Pull-to-refresh gesture across the app (disabled on routes with conflicting gestures, e.g. the
   photo detail swipe view)
 - Native background upload queue continues syncing when connectivity returns
+
+---
+
+### 🌐 Localization
+
+The web app includes runtime language switching for English (`en`) and Simplified Chinese
+(`zh-CN`). The selector is available in the signed-in user menu and in Settings.
+
+- Language changes re-render localized screens immediately without a page reload
+- The selected language is stored in local storage under `photos.language`
+- Browser language is used when no preference has been saved
+- Dates and numbers on localized screens use the active locale
+- Translation resources are grouped by feature under `apps/web/src/i18n/locales/<locale>/`
+
+The main navigation, gallery, upload, account, collaboration, and selected admin flows are
+localized. Some legacy admin, editor, and legal screens are still being migrated from hard-coded
+English strings.
 
 ---
 
@@ -476,13 +496,6 @@ previous years, grouped by year — pure SQL, no AI involved.
 
 ---
 
-### 📁 Albums
-
-Cross-event photo collections (`/admin/albums`), independent of the event structure — useful for
-curating a "best of" collection spanning multiple events.
-
----
-
 ### 🔁 Duplicate Detection
 
 Photos with byte-identical content (same SHA-256 file hash, computed client-side at upload) are
@@ -494,7 +507,7 @@ accidental re-uploads.
 ### 📜 Activity Feed
 
 A polling-based (not realtime — avoids requiring Cloudflare's paid Workers plan/Durable Objects)
-activity log at `/admin/activity` showing recent favorites, event/album creation, and photo
+activity log at `/admin/activity` showing recent favorites, event creation, and photo
 trashing across the whole site.
 
 ---
@@ -763,7 +776,6 @@ MAILGUN_DOMAIN=your_domain
 ✅ Trash with restore + Archive
 ✅ Duplicate detection
 ✅ Memories ("on this day")
-✅ Albums (cross-event collections)
 ✅ Auto-backup (folder sync on Android)
 ❌ No auto-generated trip albums (yet)
 
@@ -863,7 +875,6 @@ MAILGUN_DOMAIN=your_domain
 | Chromecast | ✅ | ❌ | ✅ |
 | Search (unified/semantic) | ✅ | ✅ | ✅ |
 | People | ❌ | ❌ | ✅ |
-| Albums | ❌ | ❌ | ✅ |
 | Trash / Archive | ❌ | ❌ | ✅ |
 | Duplicate detection | ❌ | ❌ | ✅ |
 | Activity feed | ❌ | ❌ | ✅ |
@@ -897,7 +908,6 @@ We continuously improve based on user feedback. Common requests:
 - ✅ Trash with restore + Archive
 - ✅ Memories ("on this day")
 - ✅ Duplicate detection (exact-content)
-- ✅ Albums (cross-event collections)
 - ✅ Activity feed
 - ✅ One-tap Auto Enhance
 - ✅ AI-powered unified/semantic search (Workers AI)
@@ -949,7 +959,7 @@ We continuously improve based on user feedback. Common requests:
 
 **Current Limitations:**
 
-- No server-side video transcoding (videos are stored/served as uploaded; editing is client-side only)
+- No adaptive bitrate video streaming; the maintenance job produces at most one 1080p H.264 derivative
 - Max 5GB per R2 upload (multipart)
 - D1 database: 1GB max size
 - No packaged iOS app (Android native app only; the web app itself works in iOS Safari)

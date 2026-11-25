@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useUploadContext } from '../contexts/UploadContext';
 import { useToast } from '../components/Toast';
 import type { UploadQueueItem } from '../types';
@@ -13,6 +14,7 @@ import type { UploadQueueItem } from '../types';
 export function useUpload(slug: string | undefined) {
   const ctx = useUploadContext();
   const toast = useToast();
+  const { t } = useTranslation('photos');
   const { isDragging, setIsDragging } = ctx;
 
   const queueItems = slug ? ctx.getItemsForSlug(slug) : ctx.queueItems;
@@ -23,16 +25,16 @@ export function useUpload(slug: string | undefined) {
 
   const handleFiles = useCallback(async (files: FileList) => {
     if (!slug) return;
-    const { rejected } = await ctx.addFiles(slug, files);
+    const { rejected, duplicates } = await ctx.addFiles(slug, files);
     if (rejected.length > 0) {
       const names = rejected.map(r => r.name).join(', ');
-      toast.showError(
-        rejected.length === 1
-          ? `Couldn't upload "${names}": unsupported file type. Only JPEG/PNG/RAW photos and MP4 videos are supported.`
-          : `Couldn't upload ${rejected.length} files (${names}): unsupported file type. Only JPEG/PNG/RAW photos and MP4 videos are supported.`
-      );
+      toast.showError(t('upload.unsupported', { count: rejected.length, names }));
     }
-  }, [slug, ctx, toast]);
+    if (duplicates.length > 0) {
+      const names = duplicates.map(file => file.name).join(', ');
+      toast.showInfo(t('upload.duplicatesSkipped', { count: duplicates.length, names }));
+    }
+  }, [slug, ctx, toast, t]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
