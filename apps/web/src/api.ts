@@ -348,6 +348,30 @@ export const startUpload = async (
   return response.data;
 };
 
+const MAX_UPLOAD_HASHES_PER_CHECK = 500;
+
+/** Return hashes that already belong to a completed, non-deleted upload in
+ *  this event. Large selections are split to match the Worker's request cap. */
+export const checkExistingUploadHashes = async (
+  slug: string,
+  hashes: string[]
+): Promise<string[]> => {
+  const existing = new Set<string>();
+  const uniqueHashes = Array.from(new Set(hashes));
+
+  for (let offset = 0; offset < uniqueHashes.length; offset += MAX_UPLOAD_HASHES_PER_CHECK) {
+    const batch = uniqueHashes.slice(offset, offset + MAX_UPLOAD_HASHES_PER_CHECK);
+    const response = await api.post<{ existing: string[] }>(
+      `/admin/events/${slug}/uploads/check-hashes`,
+      { hashes: batch },
+      { headers: getAdminHeaders(), timeout: START_UPLOAD_TIMEOUT_MS }
+    );
+    response.data.existing.forEach((hash) => existing.add(hash));
+  }
+
+  return Array.from(existing);
+};
+
 export const uploadPart = async (
   slug: string,
   photoId: string,

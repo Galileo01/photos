@@ -7,6 +7,8 @@ assignees: ''
 
 ---
 
+**English** | [简体中文](bug_report.zh.md)
+
 ## Description
 A clear and concise description of what the bug is.
 

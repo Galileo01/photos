@@ -31,7 +31,6 @@ import androidx.core.app.NotificationCompat;
  */
 public class UploadForegroundService extends Service {
     private static final String CHANNEL_ID = "upload_progress";
-    private static final String CHANNEL_NAME = "Upload Progress";
     public static final String EXTRA_NOTIFICATION_ID = "notificationId";
     public static final String EXTRA_TITLE = "title";
     public static final String EXTRA_BODY = "body";
@@ -57,7 +56,7 @@ public class UploadForegroundService extends Service {
             : "Uploading photos";
         String body = intent != null && intent.getStringExtra(EXTRA_BODY) != null
             ? intent.getStringExtra(EXTRA_BODY)
-            : "Upload in progress";
+            : getString(R.string.upload_in_progress);
 
         // Tapping opens the app, and "Cancel uploads" stops them. Google Play's
         // foreground-service policy requires that the user can terminate the
@@ -89,7 +88,7 @@ public class UploadForegroundService extends Service {
             .setLocalOnly(true)
             .setSilent(true)
             .setContentIntent(contentIntent)
-            .addAction(0, "Cancel uploads", cancelIntent)
+            .addAction(0, getString(R.string.upload_cancel), cancelIntent)
             .build();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -110,10 +109,10 @@ public class UploadForegroundService extends Service {
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             NotificationChannel channel = new NotificationChannel(
                 CHANNEL_ID,
-                CHANNEL_NAME,
+                getString(R.string.upload_channel_name),
                 NotificationManager.IMPORTANCE_LOW
             );
-            channel.setDescription("Shows progress of photo uploads");
+            channel.setDescription(getString(R.string.upload_channel_description));
             notificationManager.createNotificationChannel(channel);
         }
     }

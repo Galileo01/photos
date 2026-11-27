@@ -123,6 +123,7 @@ export interface UploadQueueItem {
   error?: string;
   photoId?: string;
   uploadId?: string;
+  previewUploadId?: string;
   fileType?: string; // MIME type
   parts?: Array<{ partNumber: number; etag: string }>;
   captureTime?: string;

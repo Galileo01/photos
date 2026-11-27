@@ -335,7 +335,8 @@ type CancelUploadBody = { uploadId?: string; previewUploadId?: string; fileType?
  * upload on R2 (best-effort, for both original and preview keys) and removes
  * the photo row that was created at /start — but ONLY if the photo never
  * finished uploading (upload_complete = 0), so a completed photo can never be
- * deleted through this endpoint.
+ * deleted through this endpoint. A completed original may still use this
+ * route to abort an unfinished preview multipart upload.
  * Accessible by admins and event collaborators. Always available so users can
  * always clear a half-uploaded photo from the queue.
  */
@@ -357,7 +358,7 @@ app.post('/:photoId/cancel', requireUploadPermission, async (c) => {
       .bind(photoId)
       .first<{ file_type: string; upload_complete: number }>();
 
-    if (photo && photo.upload_complete === 1) {
+    if (photo && photo.upload_complete === 1 && !body.previewUploadId) {
       return c.json({ error: 'Cannot cancel a completed upload' }, 400);
     }
 
@@ -367,7 +368,7 @@ app.post('/:photoId/cancel', requireUploadPermission, async (c) => {
     // an already-completed/nonexistent multipart upload throws — swallow
     // those errors so a stale/missing uploadId never blocks cleanup.
     const abortAttempts: Array<Promise<unknown>> = [];
-    if (body.uploadId) {
+    if (body.uploadId && photo?.upload_complete !== 1) {
       const originalKey = `original/${slug}/${photoId}.${getStorageExtension(fileType, 'original')}`;
       abortAttempts.push(
         c.env.PHOTOS_BUCKET.resumeMultipartUpload(originalKey, body.uploadId).abort()

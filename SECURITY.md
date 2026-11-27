@@ -1,5 +1,7 @@
 # Security Policy
 
+**English** | [简体中文](SECURITY.zh.md)
+
 ## Supported Versions
 
 We prioritize security updates for the following versions:

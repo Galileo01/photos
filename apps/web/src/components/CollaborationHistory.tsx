@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { Clock, UserPlus, UserMinus, Upload, AlertCircle } from 'lucide-react';
 import { getCollaborationHistory } from '../api';
+import { localeForLanguage } from '../i18n/language';
 
 interface CollaborationHistoryProps {
   eventSlug: string;
@@ -21,6 +23,7 @@ interface HistoryEntry {
 }
 
 const CollaborationHistory: React.FC<CollaborationHistoryProps> = ({ eventSlug }) => {
+  const { t, i18n } = useTranslation('events');
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +40,11 @@ const CollaborationHistory: React.FC<CollaborationHistoryProps> = ({ eventSlug }
       setHistory(data);
     } catch (err: any) {
       console.error('Failed to load collaboration history:', err);
-      setError(err.response?.data?.error || 'Failed to load history');
+      setError(
+        err.response?.data?.code
+          ? t('collaboration.history.loadFailed')
+          : (err.response?.data?.error || t('collaboration.history.loadFailed')),
+      );
     } finally {
       setLoading(false);
     }
@@ -71,32 +78,44 @@ const CollaborationHistory: React.FC<CollaborationHistoryProps> = ({ eventSlug }
 
   const formatActionDescription = (entry: HistoryEntry) => {
     const userName = entry.user_name || entry.user_email;
-    const targetName = entry.target_user_name || entry.target_user_email || 'Unknown';
+    const targetName = entry.target_user_name || entry.target_user_email || t('collaboration.history.unknown');
 
     switch (entry.action_type) {
       case 'invite':
         return (
-          <>
-            <strong>{userName}</strong> invited <strong>{targetName}</strong> to collaborate
-          </>
+          <Trans
+            ns="events"
+            i18nKey="collaboration.history.actions.invite"
+            values={{ user: userName, target: targetName }}
+            components={{ user: <strong />, target: <strong /> }}
+          />
         );
       case 'remove':
         return (
-          <>
-            <strong>{userName}</strong> removed <strong>{targetName}</strong> from collaborators
-          </>
+          <Trans
+            ns="events"
+            i18nKey="collaboration.history.actions.remove"
+            values={{ user: userName, target: targetName }}
+            components={{ user: <strong />, target: <strong /> }}
+          />
         );
       case 'upload':
         return (
-          <>
-            <strong>{userName}</strong> uploaded a photo
-          </>
+          <Trans
+            ns="events"
+            i18nKey="collaboration.history.actions.upload"
+            values={{ user: userName }}
+            components={{ user: <strong /> }}
+          />
         );
       default:
         return (
-          <>
-            <strong>{userName}</strong> performed {entry.action_type}
-          </>
+          <Trans
+            ns="events"
+            i18nKey="collaboration.history.actions.other"
+            values={{ user: userName, action: entry.action_type }}
+            components={{ user: <strong /> }}
+          />
         );
     }
   };
@@ -109,12 +128,12 @@ const CollaborationHistory: React.FC<CollaborationHistoryProps> = ({ eventSlug }
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffMins < 1) return t('collaboration.history.time.justNow');
+    if (diffMins < 60) return t('collaboration.history.time.minutesAgo', { count: diffMins });
+    if (diffHours < 24) return t('collaboration.history.time.hoursAgo', { count: diffHours });
+    if (diffDays < 7) return t('collaboration.history.time.daysAgo', { count: diffDays });
     
-    return date.toLocaleDateString('en-US', { 
+    return date.toLocaleDateString(localeForLanguage(i18n.resolvedLanguage), {
       month: 'short', 
       day: 'numeric',
       year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
@@ -126,9 +145,9 @@ const CollaborationHistory: React.FC<CollaborationHistoryProps> = ({ eventSlug }
       <div className="bg-gray-800 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <Clock className="w-5 h-5" />
-          Collaboration History
+          {t('collaboration.history.title')}
         </h3>
-        <div className="text-gray-400 text-center py-8">Loading history...</div>
+        <div className="text-gray-400 text-center py-8">{t('collaboration.history.loading')}</div>
       </div>
     );
   }
@@ -138,7 +157,7 @@ const CollaborationHistory: React.FC<CollaborationHistoryProps> = ({ eventSlug }
       <div className="bg-gray-800 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <Clock className="w-5 h-5" />
-          Collaboration History
+          {t('collaboration.history.title')}
         </h3>
         <div className="text-red-400 flex items-center gap-2 justify-center py-8">
           <AlertCircle className="w-5 h-5" />
@@ -152,12 +171,12 @@ const CollaborationHistory: React.FC<CollaborationHistoryProps> = ({ eventSlug }
     <div className="bg-gray-800 rounded-lg p-6">
       <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
         <Clock className="w-5 h-5" />
-        Collaboration History
+        {t('collaboration.history.title')}
       </h3>
 
       {history.length === 0 ? (
         <div className="text-gray-400 text-center py-8">
-          No collaboration activity yet
+          {t('collaboration.history.empty')}
         </div>
       ) : (
         <div className="space-y-3 max-h-96 overflow-y-auto">

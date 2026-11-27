@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import ModalOverlay from './ModalOverlay';
+import { useTranslation } from 'react-i18next';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -17,12 +18,13 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   isOpen,
   title,
   message,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
+  confirmText,
+  cancelText,
   onConfirm,
   onCancel,
   variant = 'default',
 }) => {
+  const { t } = useTranslation('common');
   if (!isOpen) return null;
 
   return (
@@ -52,7 +54,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             onClick={onCancel}
             className="flex-1 px-4 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition font-medium"
           >
-            {cancelText}
+            {cancelText ?? t('confirm.cancel')}
           </button>
           <button
             onClick={onConfirm}
@@ -62,7 +64,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                 : 'bg-blue-600 hover:bg-blue-700 text-white'
             }`}
           >
-            {confirmText}
+            {confirmText ?? t('confirm.confirm')}
           </button>
         </div>
       </div>

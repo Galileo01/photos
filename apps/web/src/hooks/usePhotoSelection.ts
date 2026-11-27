@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Photo } from '../types';
 
 /**
@@ -6,6 +6,14 @@ import type { Photo } from '../types';
  */
 export function usePhotoSelection(photos: Photo[]) {
   const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const availablePhotoIds = new Set(photos.map((photo) => photo.id));
+    setSelectedPhotos((previous) => {
+      const next = new Set(Array.from(previous).filter((id) => availablePhotoIds.has(id)));
+      return next.size === previous.size ? previous : next;
+    });
+  }, [photos]);
 
   const togglePhotoSelection = (photoId: string) => {
     setSelectedPhotos(prev => {

@@ -1,5 +1,7 @@
 # Contributing Guide
 
+**English** | [简体中文](contributing.zh.md)
+
 Thank you for your interest in contributing to this photo sharing application! This guide will help you get started.
 
 ## Table of Contents
@@ -10,6 +12,7 @@ Thank you for your interest in contributing to this photo sharing application! T
 - [Project Structure](#project-structure)
 - [Development Workflow](#development-workflow)
 - [Coding Standards](#coding-standards)
+- [Localization](#localization)
 - [Testing](#testing)
 - [Submitting Changes](#submitting-changes)
 - [Feature Requests](#feature-requests)
@@ -540,6 +543,27 @@ const photos = []; // initialize photos array
 
 // Good (no comment needed)
 const photos: Photo[] = [];
+```
+
+## Localization
+
+English is the source locale and Simplified Chinese uses `zh-CN`. Put Web UI strings in the
+feature namespace under both `apps/web/src/i18n/locales/en/` and
+`apps/web/src/i18n/locales/zh-CN/`.
+
+- Keep the key structure identical between locales
+- Use interpolation and plural rules for dynamic values
+- Use `Trans` for sentences that contain React elements such as links or emphasized text
+- Format user-visible dates and numbers with the active locale from `localeForLanguage()`
+- Update visible labels, placeholders, tooltips, ARIA labels, confirmations, toasts, and SEO text
+  together
+- Add or update a focused test when language switching or interpolation behavior changes
+
+Every tracked English Markdown document also has a `.zh.md` sibling. Keep their headings, tables,
+code blocks, commands, paths, and configuration keys aligned, then run:
+
+```bash
+npm run docs:i18n:check
 ```
 
 ## Testing

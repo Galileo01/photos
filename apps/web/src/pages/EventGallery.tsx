@@ -33,6 +33,8 @@ import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
 import { haptics } from '../utils/haptics';
 import { trackPhotoDownload, trackFavorite } from '../services/analytics';
+import { useTranslation } from 'react-i18next';
+import { localeForLanguage } from '../i18n/language';
 
 const EventGallery: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -40,6 +42,7 @@ const EventGallery: React.FC = () => {
   const { registerRefreshHandler, unregisterRefreshHandler } = useRefresh();
   const toast = useToast();
   const { confirm, ConfirmDialog } = useConfirm();
+  const { t, i18n } = useTranslation(['events', 'photos', 'common']);
   const isAdmin = user?.isAdmin === true;
   const [event, setEvent] = useState<Event | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -109,7 +112,11 @@ const EventGallery: React.FC = () => {
       if (group) group.push(photo);
       else byHash.set(photo.file_hash, [photo]);
     }
-    return Array.from(byHash.values()).filter((group) => group.length > 1);
+    return Array.from(byHash.values())
+      .filter((group) => group.length > 1)
+      .map((group) => group.sort((a, b) => (
+        a.uploaded_at.localeCompare(b.uploaded_at) || a.id.localeCompare(b.id)
+      )));
   }, [photos]);
   const duplicatePhotoCount = duplicateGroups.reduce((sum, group) => sum + group.length - 1, 0);
 
@@ -123,6 +130,7 @@ const EventGallery: React.FC = () => {
     clearSelection,
     toggleDateSelection,
     isDateFullySelected,
+    setSelectedPhotos,
   } = usePhotoSelection(photos);
 
   // Wrapper to add haptic feedback to photo selection
@@ -162,9 +170,9 @@ const EventGallery: React.FC = () => {
       return;
     }
 
-    toast.showInfo('Tip: Long-press a photo to start multi-select.');
+    toast.showInfo(t('events:galleryPage.longPressHint'));
     localStorage.setItem(hintKey, '1');
-  }, [loading, photos.length, supportsHover, toast]);
+  }, [loading, photos.length, supportsHover, t, toast]);
 
   useEffect(() => {
     if (slug) {
@@ -292,7 +300,7 @@ const EventGallery: React.FC = () => {
 
       setError(null);
     } catch (err) {
-      setError('Failed to load event');
+      setError(t('events:galleryPage.loadFailed'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -377,8 +385,8 @@ const EventGallery: React.FC = () => {
     // Require authentication for favorites
     if (!isAuthenticated) {
       const shouldLogin = await confirm(
-        'Login Required',
-        'You need to be logged in to save favorites. Would you like to login now?'
+        t('events:galleryPage.loginRequired'),
+        t('events:galleryPage.loginToSaveFavorites')
       );
       if (shouldLogin) {
         login();
@@ -405,7 +413,7 @@ const EventGallery: React.FC = () => {
       setUserFavorites(newFavorites);
     } catch (err) {
       console.error('Failed to toggle favorite:', err);
-      toast.showError('Failed to update favorite. Please try again.');
+      toast.showError(t('events:galleryPage.errors.favorite'));
     }
   };
 
@@ -418,14 +426,14 @@ const EventGallery: React.FC = () => {
       ));
     } catch (err) {
       console.error('Failed to toggle featured status:', err);
-      toast.showError('Failed to update featured status. You may need admin access.');
+      toast.showError(t('events:galleryPage.errors.featured'));
     }
   };
 
   const downloadSelected = async () => {
     const selected = Array.from(selectedPhotos);
     if (selected.length === 0) {
-      toast.showInfo('No photos selected');
+      toast.showInfo(t('photos:selection.none'));
       return;
     }
     
@@ -444,7 +452,7 @@ const EventGallery: React.FC = () => {
       trackPhotoDownload('bulk', slug!, true, selected.length);
     } catch (error) {
       console.error('Error downloading ZIP:', error);
-      toast.showError('Failed to download ZIP file');
+      toast.showError(t('events:galleryPage.errors.download'));
     } finally {
       setDownloading(false);
     }
@@ -452,19 +460,19 @@ const EventGallery: React.FC = () => {
 
   const handleBulkDelete = async () => {
     if (!canDelete) {
-      toast.showError('Delete permission required for this event.');
+      toast.showError(t('events:galleryPage.errors.deletePermission'));
       return;
     }
 
     const selected = Array.from(selectedPhotos);
     if (selected.length === 0) {
-      toast.showInfo('No photos selected');
+      toast.showInfo(t('photos:selection.none'));
       return;
     }
     
     const confirmed = await confirm(
-      'Delete Photos',
-      `Are you sure you want to delete ${selected.length} selected photo(s)? This cannot be undone!`,
+      t('events:galleryPage.moveToTrashTitle'),
+      t('events:galleryPage.moveToTrashDescription', { count: selected.length }),
       { variant: 'danger' }
     );
     
@@ -482,15 +490,18 @@ const EventGallery: React.FC = () => {
       
       if (result.deletedCount === result.totalRequested) {
         await haptics.success();
-        toast.showSuccess(`Successfully deleted ${result.deletedCount} photo(s)`);
+        toast.showSuccess(t('events:galleryPage.success.movedToTrash', { count: result.deletedCount }));
       } else {
         await haptics.warning();
-        toast.showInfo(`Deleted ${result.deletedCount} of ${result.totalRequested} photo(s). Some photos may have failed to delete.`);
+        toast.showInfo(t('events:galleryPage.success.partiallyMovedToTrash', {
+          moved: result.deletedCount,
+          total: result.totalRequested,
+        }));
       }
     } catch (error) {
       console.error('Error deleting photos:', error);
       await haptics.error();
-      toast.showError('Failed to delete photos. Please try again.');
+      toast.showError(t('events:galleryPage.errors.delete'));
     } finally {
       setDeleting(false);
     }
@@ -500,13 +511,13 @@ const EventGallery: React.FC = () => {
   // Admin-only (enforced both here and server-side — see /admin/photos/bulk-location).
   const handleBulkSetLocation = async (latitude: number, longitude: number) => {
     if (!isAdmin) {
-      toast.showError('Admin access required to edit photo location');
+      toast.showError(t('events:galleryPage.errors.locationPermission'));
       return;
     }
 
     const selected = Array.from(selectedPhotos);
     if (selected.length === 0) {
-      toast.showInfo('No photos selected');
+      toast.showInfo(t('photos:selection.none'));
       return;
     }
 
@@ -520,11 +531,11 @@ const EventGallery: React.FC = () => {
       setShowLocationPicker(false);
       clearSelection();
       await haptics.success();
-      toast.showSuccess(`Updated location for ${result.updatedCount} photo(s)`);
+      toast.showSuccess(t('events:galleryPage.success.locationUpdated', { count: result.updatedCount }));
     } catch (error) {
       console.error('Error updating photo location:', error);
       await haptics.error();
-      toast.showError('Failed to update photo location. Please try again.');
+      toast.showError(t('events:galleryPage.errors.location'));
     }
   };
 
@@ -542,7 +553,7 @@ const EventGallery: React.FC = () => {
 
   const handleOpenPeopleTagPicker = async () => {
     if (selectedPhotos.size === 0) {
-      toast.showInfo('No photos selected');
+      toast.showInfo(t('photos:selection.none'));
       return;
     }
     setPeopleTagSelection(new Set());
@@ -554,7 +565,7 @@ const EventGallery: React.FC = () => {
       setNamedPeople(people);
     } catch (err) {
       console.error('Failed to load people list', err);
-      toast.showError('Failed to load people list');
+      toast.showError(t('events:galleryPage.errors.peopleLoad'));
     } finally {
       setNamedPeopleLoading(false);
     }
@@ -576,12 +587,12 @@ const EventGallery: React.FC = () => {
   // bulkTagPeopleOnPhotos()'s doc comment in api.ts for why this is deliberately additive.
   const handleBulkTagPeople = async () => {
     if (peopleTagSelection.size === 0) {
-      toast.showInfo('Select at least one person');
+      toast.showInfo(t('events:galleryPage.errors.peopleSelect'));
       return;
     }
     const selected = Array.from(selectedPhotos);
     if (selected.length === 0) {
-      toast.showInfo('No photos selected');
+      toast.showInfo(t('photos:selection.none'));
       return;
     }
 
@@ -591,11 +602,11 @@ const EventGallery: React.FC = () => {
       setShowPeopleTagPicker(false);
       clearSelection();
       await haptics.success();
-      toast.showSuccess(`Tagged people on ${result.taggedPhotoCount} photo(s)`);
+      toast.showSuccess(t('events:galleryPage.success.peopleTagged', { count: result.taggedPhotoCount }));
     } catch (err) {
       console.error('Failed to bulk-tag people', err);
       await haptics.error();
-      toast.showError('Failed to tag people. Please try again.');
+      toast.showError(t('events:galleryPage.errors.peopleTag'));
     } finally {
       setTaggingPeople(false);
     }
@@ -606,12 +617,12 @@ const EventGallery: React.FC = () => {
   const handleBulkUntagPeople = async () => {
     const selected = Array.from(selectedPhotos);
     if (selected.length === 0) {
-      toast.showInfo('No photos selected');
+      toast.showInfo(t('photos:selection.none'));
       return;
     }
     const confirmed = await confirm(
-      'Remove All People',
-      `Remove every tagged person from ${selected.length} photo${selected.length === 1 ? '' : 's'}? This cannot be undone automatically.`,
+      t('events:galleryPage.removeAllPeopleTitle'),
+      t('events:galleryPage.removeAllPeopleDescription', { count: selected.length }),
       { variant: 'danger' }
     );
     if (!confirmed) return;
@@ -622,11 +633,11 @@ const EventGallery: React.FC = () => {
       setShowPeopleTagPicker(false);
       clearSelection();
       await haptics.success();
-      toast.showSuccess(`Removed people from ${result.clearedCount} photo(s)`);
+      toast.showSuccess(t('events:galleryPage.success.peopleRemoved', { count: result.clearedCount }));
     } catch (err) {
       console.error('Failed to bulk-untag people', err);
       await haptics.error();
-      toast.showError('Failed to remove people. Please try again.');
+      toast.showError(t('events:galleryPage.errors.peopleRemove'));
     } finally {
       setTaggingPeople(false);
     }
@@ -636,8 +647,11 @@ const EventGallery: React.FC = () => {
     if (duplicateGroups.length === 0) return;
 
     const confirmed = await confirm(
-      'Remove Duplicate Photos',
-      `Found ${duplicateGroups.length} set(s) of duplicate photos (${duplicatePhotoCount} extra cop${duplicatePhotoCount === 1 ? 'y' : 'ies'}). The first photo in each set will be kept and the rest deleted. This cannot be undone!`,
+      t('events:galleryPage.removeDuplicatesTitle'),
+      t('events:galleryPage.removeDuplicatesDescription', {
+        groupCount: duplicateGroups.length,
+        photoCount: duplicatePhotoCount,
+      }),
       { variant: 'danger' }
     );
     if (!confirmed) return;
@@ -649,14 +663,19 @@ const EventGallery: React.FC = () => {
     try {
       setRemovingDuplicates(true);
       const result = await bulkDeletePhotos(idsToDelete);
+      setSelectedPhotos((previous) => {
+        const next = new Set(previous);
+        idsToDelete.forEach((id) => next.delete(id));
+        return next;
+      });
       await loadPhotos();
       await haptics.success();
-      toast.showSuccess(`Removed ${result.deletedCount} duplicate photo(s)`);
+      toast.showSuccess(t('events:galleryPage.success.duplicatesRemoved', { count: result.deletedCount }));
       setDuplicateBannerDismissed(true);
     } catch (error) {
       console.error('Error removing duplicate photos:', error);
       await haptics.error();
-      toast.showError('Failed to remove duplicate photos. Please try again.');
+      toast.showError(t('events:galleryPage.errors.duplicates'));
     } finally {
       setRemovingDuplicates(false);
     }
@@ -665,7 +684,7 @@ const EventGallery: React.FC = () => {
   const handleBulkCopy = async (targetEventSlug: string) => {
     const selected = Array.from(selectedPhotos);
     if (selected.length === 0) {
-      toast.showInfo('No photos selected');
+      toast.showInfo(t('photos:selection.none'));
       return;
     }
 
@@ -677,15 +696,18 @@ const EventGallery: React.FC = () => {
 
       if (result.copiedCount === result.totalRequested) {
         await haptics.success();
-        toast.showSuccess(`Successfully copied ${result.copiedCount} photo(s) to the album`);
+        toast.showSuccess(t('events:galleryPage.success.copied', { count: result.copiedCount }));
       } else {
         await haptics.warning();
-        toast.showInfo(`Copied ${result.copiedCount} of ${result.totalRequested} photo(s). Some photos may have failed to copy.`);
+        toast.showInfo(t('events:galleryPage.success.partiallyCopied', {
+          copied: result.copiedCount,
+          total: result.totalRequested,
+        }));
       }
     } catch (error) {
       console.error('Error copying photos:', error);
       await haptics.error();
-      toast.showError('Failed to copy photos. Please try again.');
+      toast.showError(t('events:galleryPage.errors.copy'));
     } finally {
       setCopying(false);
     }
@@ -869,8 +891,8 @@ const EventGallery: React.FC = () => {
 
     if (!isAuthenticated) {
       const shouldLogin = await confirm(
-        'Login Required',
-        'You need to be logged in to update favorites. Would you like to login now?'
+        t('events:galleryPage.loginRequired'),
+        t('events:galleryPage.loginToUpdateFavorites')
       );
       if (shouldLogin) {
         login();
@@ -897,10 +919,10 @@ const EventGallery: React.FC = () => {
       });
 
       await haptics.light();
-      toast.showSuccess(allAlreadyFavorited ? 'Removed selected photos from favorites' : 'Added selected photos to favorites');
+      toast.showSuccess(allAlreadyFavorited ? t('events:galleryPage.success.favoritesRemoved') : t('events:galleryPage.success.favoritesAdded'));
     } catch (err) {
       console.error('Failed to update selected favorites:', err);
-      toast.showError('Failed to update favorites. Please try again.');
+      toast.showError(t('events:galleryPage.errors.favorite'));
     }
   };
 
@@ -928,10 +950,10 @@ const EventGallery: React.FC = () => {
       );
 
       await haptics.light();
-      toast.showSuccess(shouldEnableFeatured ? 'Selected photos marked as featured' : 'Removed featured status from selected photos');
+      toast.showSuccess(shouldEnableFeatured ? t('events:galleryPage.success.featuredAdded') : t('events:galleryPage.success.featuredRemoved'));
     } catch (err) {
       console.error('Failed to update selected featured status:', err);
-      toast.showError('Failed to update featured status. You may need admin access.');
+      toast.showError(t('events:galleryPage.errors.featured'));
     }
   };
 
@@ -1429,8 +1451,8 @@ const EventGallery: React.FC = () => {
           void handleBulkCopy(targetSlug);
         }}
         excludeSlug={slug}
-        title="Copy to Album"
-        description="Choose an album to copy the selected photos to"
+        title={t('events:galleryPage.copyTitle')}
+        description={t('events:galleryPage.copyDescription')}
       />
       {isAdmin && (
         <EventLocationPicker
@@ -1452,7 +1474,7 @@ const EventGallery: React.FC = () => {
           >
             <div className="flex justify-between items-center mb-4 shrink-0">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Users className="w-5 h-5" /> Tag people on {selectedPhotos.size} photo{selectedPhotos.size === 1 ? '' : 's'}
+                <Users className="w-5 h-5" /> {t('events:galleryPage.tagPeopleTitle', { count: selectedPhotos.size })}
               </h2>
               <button
                 onClick={() => setShowPeopleTagPicker(false)}
@@ -1464,23 +1486,23 @@ const EventGallery: React.FC = () => {
             </div>
 
             <p className="text-xs text-gray-400 mb-3 shrink-0">
-              Adds the selected people to every chosen photo — existing tags on these photos are kept.
+              {t('events:galleryPage.tagPeopleDescription')}
             </p>
 
             <input
               type="text"
               value={peopleTagSearchQuery}
               onChange={(e) => setPeopleTagSearchQuery(e.target.value)}
-              placeholder="Search people..."
+              placeholder={t('events:galleryPage.searchPeople')}
               className="mb-3 w-full px-3 py-2 bg-gray-700 text-white rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
             />
 
             <div className="flex-1 overflow-y-auto space-y-1 -mx-1 px-1">
               {namedPeopleLoading ? (
-                <p className="text-gray-400 text-sm py-4 text-center">Loading people...</p>
+                <p className="text-gray-400 text-sm py-4 text-center">{t('events:galleryPage.loadingPeople')}</p>
               ) : namedPeople.length === 0 ? (
                 <p className="text-gray-400 text-sm py-4 text-center">
-                  No named people yet — name someone in Admin → People first.
+                  {t('events:galleryPage.noNamedPeople')}
                 </p>
               ) : (
                 namedPeople
@@ -1509,7 +1531,7 @@ const EventGallery: React.FC = () => {
                 disabled={taggingPeople}
                 className="w-full py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-950/40 rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
-                <UserX className="w-4 h-4" /> Remove all people (person: none)
+                <UserX className="w-4 h-4" /> {t('events:galleryPage.removeAllPeople')}
               </button>
             </div>
 
@@ -1519,22 +1541,22 @@ const EventGallery: React.FC = () => {
                 disabled={taggingPeople}
                 className="flex-1 py-2.5 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition disabled:opacity-50"
               >
-                Cancel
+                {t('common:actions.cancel')}
               </button>
               <button
                 onClick={handleBulkTagPeople}
                 disabled={taggingPeople || peopleTagSelection.size === 0}
                 className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50"
               >
-                {taggingPeople ? 'Tagging...' : 'Tag People'}
+                {taggingPeople ? t('events:galleryPage.tagging') : t('events:galleryPage.tagPeople')}
               </button>
             </div>
           </div>
         </div>
       )}
       <SEO
-        title={`${event?.name || 'Event Gallery'} - ${config.appName}`}
-        description={`Browse ${photos.length} photos from ${event?.name}${event?.cities && event.cities.length > 0 ? ` in ${event.cities.join(', ')}` : ''}. Professional event photography featuring ice skating and inline skating.`}
+        title={`${event?.name || t('events:galleryPage.seoTitleFallback')} - ${config.appName}`}
+        description={t('events:galleryPage.seoDescription', { count: photos.length, name: event?.name ?? '' })}
         keywords={`${event?.name}, event photography, ${event?.cities?.join(', ')}, ice skating, inline skating`}
         url={`${window.location.origin}/events/${slug}`}
         type="article"
@@ -1548,7 +1570,7 @@ const EventGallery: React.FC = () => {
       }`}>
         <div className="mb-4 sm:mb-6">
           <Link to="/events" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-2 inline-block text-sm font-medium">
-            ← Back to Events
+            {t('events:galleryPage.back')}
           </Link>
           
           {/* Header: everything about this event (title, badge, collaborators, and every
@@ -1570,12 +1592,12 @@ const EventGallery: React.FC = () => {
                     : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
                 }`}>
                   {event.requires_password
-                    ? 'Password Protected'
+                    ? t('events:galleryPage.passwordProtected')
                     : event.visibility === 'public' 
-                    ? 'Public'
+                    ? t('events:public')
                     : event.visibility === 'collaborators_only'
-                    ? 'Invite Only'
-                    : 'Private'}
+                    ? t('events:inviteOnly')
+                    : t('events:private')}
                 </span>
               )}
             </div>
@@ -1598,7 +1620,7 @@ const EventGallery: React.FC = () => {
                 {canUpload && (
                   <label className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors text-sm font-medium cursor-pointer">
                     <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="hidden sm:inline">Upload</span>
+                    <span className="hidden sm:inline">{t('events:galleryPage.upload')}</span>
                     <input type="file" multiple accept="image/jpeg,image/png,video/mp4,video/quicktime,.mov,.cr2,.cr3,.crw,.nef,.nrw,.arw,.srf,.sr2,.dng,.raf,.orf,.rw2,.pef,.ptx,.srw,.raw,.rwl,.erf,.kdc,.dcr,.mrw,.x3f,.3fr,.mef,.mos,.iiq" onChange={handleFileInput} className="hidden" />
                   </label>
                 )}
@@ -1628,7 +1650,7 @@ const EventGallery: React.FC = () => {
                     className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
                   >
                     <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="hidden sm:inline">Settings</span>
+                    <span className="hidden sm:inline">{t('events:galleryPage.settings')}</span>
                   </button>
                 )}
               </div>
@@ -1683,7 +1705,7 @@ const EventGallery: React.FC = () => {
         {canDelete && duplicateGroups.length > 0 && !duplicateBannerDismissed && (
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/30 px-4 py-3">
             <p className="flex-1 text-sm text-amber-800 dark:text-amber-200">
-              Found {duplicatePhotoCount} duplicate photo{duplicatePhotoCount === 1 ? '' : 's'} in {duplicateGroups.length === 1 ? 'this album' : `${duplicateGroups.length} sets`}. Would you like to remove {duplicatePhotoCount === 1 ? 'it' : 'them'}?
+              {t('events:galleryPage.duplicates', { photoCount: duplicatePhotoCount, groupCount: duplicateGroups.length })}
             </p>
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
@@ -1691,13 +1713,13 @@ const EventGallery: React.FC = () => {
                 disabled={removingDuplicates}
                 className="px-3 py-1.5 text-sm font-medium bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white rounded-full transition-colors"
               >
-                {removingDuplicates ? 'Removing…' : 'Remove Duplicates'}
+                {removingDuplicates ? t('events:galleryPage.removing') : t('events:galleryPage.removeDuplicates')}
               </button>
               <button
                 onClick={() => setDuplicateBannerDismissed(true)}
                 className="px-3 py-1.5 text-sm text-amber-800 dark:text-amber-200 hover:underline"
               >
-                Dismiss
+                {t('events:galleryPage.dismiss')}
               </button>
             </div>
           </div>
@@ -1717,16 +1739,16 @@ const EventGallery: React.FC = () => {
         {/* Gallery */}
         {photos.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400">No photos found.</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('events:galleryPage.empty')}</p>
           </div>
         ) : filteredPhotos.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400">No photos match "{searchQuery}"</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('events:galleryPage.noMatch', { query: searchQuery })}</p>
             <button
               onClick={() => setSearchQuery('')}
               className="mt-2 text-blue-600 dark:text-blue-400 text-sm hover:underline"
             >
-              Clear search
+              {t('events:galleryPage.clearSearch')}
             </button>
           </div>
         ) : isMultiDateView ? (
@@ -1735,7 +1757,7 @@ const EventGallery: React.FC = () => {
             {visibleDates.map((date) => {
               const datePhotos = photosByDate.get(date) || [];
               const dateObj = new Date(date);
-              const formattedDate = dateObj.toLocaleDateString('en-US', { 
+              const formattedDate = dateObj.toLocaleDateString(localeForLanguage(i18n.resolvedLanguage), {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long', 
@@ -1761,15 +1783,15 @@ const EventGallery: React.FC = () => {
                         {formattedDate}
                       </h2>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        {datePhotos.length} {datePhotos.length === 1 ? 'photo' : 'photos'}
+                        {t('photos:selection.count', { count: datePhotos.length })}
                       </p>
                     </div>
                     <button
                       onClick={() => toggleDateSelection(datePhotos)}
                       className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors"
-                      title={isDateFullySelected(datePhotos) ? 'Deselect all' : 'Select all'}
+                      title={isDateFullySelected(datePhotos) ? t('photos:selection.deselectAll') : t('photos:selection.selectAll')}
                     >
-                      {isDateFullySelected(datePhotos) ? 'Deselect All' : 'Select All'}
+                      {isDateFullySelected(datePhotos) ? t('photos:selection.deselectAll') : t('photos:selection.selectAll')}
                     </button>
                   </div>
                   

@@ -1,5 +1,7 @@
 # Architecture Documentation
 
+**English** | [简体中文](architecture.zh.md)
+
 This document provides a technical overview of the photo sharing application architecture.
 
 ## Technology Stack
@@ -11,6 +13,7 @@ This document provides a technical overview of the photo sharing application arc
 - **Routing:** React Router v7
 - **Styling:** Tailwind CSS 4
 - **State Management:** React Context API + Hooks
+- **Localization:** `i18next` + `react-i18next` (`en` source locale and `zh-CN`)
 - **Mobile:** Capacitor 8 (Android native wrapper; iOS is not currently packaged)
 - **Image Processing:** Browser Canvas API for previews/blur placeholders, `libraw-wasm` for client-side RAW decoding, `react-filerobot-image-editor` + `react-konva` for in-browser image editing
 - **Video Processing:** `@ffmpeg/ffmpeg` (WASM, single-threaded) for client-side trim/crop/speed edits
@@ -140,6 +143,7 @@ This controls Worker cron triggers, not the separate GitHub Actions schedules.
 │   │   │   │                  # CastButton/CastReceiver, PullToRefresh, OfflineBanner, ...)
 │   │   │   ├── contexts/       # React contexts (Auth, Upload, etc.)
 │   │   │   ├── hooks/          # Custom React hooks
+│   │   │   ├── i18n/           # i18next setup, language helpers, and locale resources
 │   │   │   ├── pages/          # Page components (routes) (Timeline, PhotoUsage, PrivacyPolicy,
 │   │   │   │                  # InviteAccept, ...)
 │   │   │   ├── services/       # Business logic services (uploadManager, backgroundSync, ...)
@@ -509,7 +513,7 @@ All sensitive values stored as Cloudflare secrets:
 Potential improvements:
 
 1. **Real-time Features** - Durable Objects for live collaboration
-2. **Server-Side Video Transcoding** - Cloudflare Stream integration (today, video editing/trimming happens entirely client-side via FFmpeg WASM; there is no server-side transcoding or adaptive bitrate streaming)
+2. **Adaptive Video Streaming** - Cloudflare Stream integration beyond the current scheduled single-bitrate 1080p H.264 derivative
 3. **AI Features** - Workers AI for auto-tagging
 4. **Advanced Search** - Full-text search with Vectorize
 5. **CDN Optimization** - Polish for automatic image optimization

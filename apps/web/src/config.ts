@@ -33,7 +33,7 @@ const defaultConfig: AppConfig = {
   appName: 'Photos',
   brandName: 'Photos',
   copyrightHolder: 'Your Name',
-  domain: 'localhost:5173',
+  domain: typeof window === 'undefined' ? 'localhost:5173' : window.location.host,
   apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:8787',
   contactEmail: 'contact@example.com',
   features: {

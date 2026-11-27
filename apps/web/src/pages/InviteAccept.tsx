@@ -4,6 +4,7 @@ import { Check, AlertCircle, Loader2, UserPlus } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { acceptInvite } from '../api';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const InviteAccept: React.FC = () => {
   const { token } = useParams<{ token: string }>();
@@ -12,6 +13,7 @@ const InviteAccept: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'success' | 'already-member' | 'error' | 'auth-required'>('loading');
   const [error, setError] = useState<string>('');
   const [eventName, setEventName] = useState<string>('');
+  const { t } = useTranslation('account');
 
   // If opened in a mobile browser (not inside the native app), try to hand
   // off to the app first via its custom URL scheme. If the app isn't
@@ -44,7 +46,7 @@ const InviteAccept: React.FC = () => {
 
     if (!token) {
       setStatus('error');
-      setError('Invalid invite link');
+      setError(t('invite.invalid'));
       return;
     }
 
@@ -80,7 +82,7 @@ const InviteAccept: React.FC = () => {
         return;
       }
 
-      setError(err.response?.data?.error || 'Failed to accept invitation');
+      setError(err.response?.data?.code ? t('invite.failed') : (err.response?.data?.error || t('invite.failed')));
       setStatus('error');
     }
   };
@@ -102,10 +104,10 @@ const InviteAccept: React.FC = () => {
               <Loader2 className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Processing Invitation
+              {t('invite.processing')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Please wait while we add you as a collaborator...
+              {t('invite.processingDescription')}
             </p>
           </div>
         )}
@@ -116,17 +118,17 @@ const InviteAccept: React.FC = () => {
               <UserPlus className="w-8 h-8 text-amber-600 dark:text-amber-400" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Login Required
+              {t('invite.loginRequired')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              You need to be logged in to accept this collaboration invitation.
+              {t('invite.loginDescription')}
             </p>
             <button
               onClick={handleLogin}
               className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition font-medium flex items-center justify-center gap-2"
             >
               <UserPlus className="w-5 h-5" />
-              Login to Continue
+              {t('invite.loginAction')}
             </button>
           </div>
         )}
@@ -137,14 +139,13 @@ const InviteAccept: React.FC = () => {
               <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Welcome!
+              {t('invite.welcome')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              You are now a collaborator on <strong className="text-gray-900 dark:text-white">{eventName}</strong>.
-              You can now upload photos and videos to this event.
+              {t('invite.success', { event: eventName })}
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Redirecting to event gallery...
+              {t('invite.redirecting')}
             </p>
           </div>
         )}
@@ -155,10 +156,10 @@ const InviteAccept: React.FC = () => {
               <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              You're already in!
+              {t('invite.already')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Taking you to the event gallery...
+              {t('invite.alreadyDescription')}
             </p>
           </div>
         )}
@@ -169,7 +170,7 @@ const InviteAccept: React.FC = () => {
               <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Unable to Accept Invitation
+              {t('invite.unable')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               {error}
@@ -183,7 +184,7 @@ const InviteAccept: React.FC = () => {
               }}
               className="w-full px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 active:bg-gray-800 transition font-medium"
             >
-              Login to Continue
+              {t('invite.loginAction')}
             </button>
           </div>
         )}

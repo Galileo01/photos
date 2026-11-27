@@ -1,5 +1,7 @@
 # Pull Request
 
+**English** | [简体中文](pull_request_template.zh.md)
+
 ## Description
 Please include a summary of the changes and related context. Include any relevant issue numbers.
 

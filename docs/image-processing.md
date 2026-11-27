@@ -1,5 +1,7 @@
 # Image Processing Note
 
+**English** | [简体中文](image-processing.zh.md)
+
 ## Current Implementation Status
 
 **As of this writing, this is the current, shipped architecture** - not a temporary pre-launch gap.
@@ -10,9 +12,10 @@ or Instagram-style derivative** anywhere in the codebase (confirmed: `generateWa
 ### What Actually Happens Today
 
 1. **Original**: The uploaded file (photo, video, or RAW) is stored as-is in R2 under `original/{eventSlug}/{photoId}.{ext}`, with no server-side modification.
-2. **Preview**: The browser (`apps/web/src/imageUtils.ts#createPreview`, or the RAW-decode path in `rawImageUtils.ts`) resizes the image client-side to a max of 1920px on the longest side at 85% JPEG quality, and uploads that as a second file to `preview/{eventSlug}/{photoId}.jpg`. Videos don't get a separate preview file - the original is served for both `preview` and `original` requests.
-3. **No watermark** is applied to either derivative.
-4. **No Instagram-square (`ig/`) derivative** is generated for new uploads. The `ig/` R2 key prefix and its `media.ts` route still exist only so that (a) old links/cached objects from earlier versions keep working, and (b) photo deletion cleans up any leftover `ig/` object. No code path writes new files there.
+2. **Image preview**: The browser (`apps/web/src/imageUtils.ts#createPreview`, or the RAW-decode path in `rawImageUtils.ts`) resizes the image client-side to a max of 1920px on the longest side at 85% JPEG quality, and uploads that as a second file to `preview/{eventSlug}/{photoId}.jpg`.
+3. **Video derivatives**: A fresh video upload initially uses the original `.mp4` for playback and uploads a `poster/{eventSlug}/{photoId}.jpg` cover frame. The scheduled `scripts/transcode-videos.sh` job can later create a 1080p H.264 derivative at `preview/{eventSlug}/{photoId}.mp4`; media requests prefer it and fall back to the original while it is absent.
+4. **No watermark** is applied to the original or any derivative.
+5. **No Instagram-square (`ig/`) derivative** is generated for new uploads. The `ig/` R2 key prefix and its `media.ts` route still exist only so that (a) old links/cached objects from earlier versions keep working, and (b) photo deletion cleans up any leftover `ig/` object. No code path writes new files there.
 
 ### Historical Context (superseded)
 

@@ -57,7 +57,7 @@ self.addEventListener('fetch', (event) => {
       // Not in cache — fetch from network using the REAL request (with its
       // auth query params intact, so the server can authorize it)
       const response = await fetch(event.request);
-      if (response.ok) {
+      if (response.ok && !response.headers.get('Cache-Control')?.includes('no-store')) {
         // Clone and store in cache under the normalized key (don't await —
         // fire and forget)
         const clone = response.clone();

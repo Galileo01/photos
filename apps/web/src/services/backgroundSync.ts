@@ -124,23 +124,36 @@ class BackgroundSyncService {
    * fast-loading preview as web-uploaded ones instead of permanently
    * serving the full-size original in the gallery.
    */
-  private async uploadPreview(eventSlug: string, photoId: string, previewBlob: Blob): Promise<void> {
+  private async uploadPreview(upload: UploadQueueItem, photoId: string, previewBlob: Blob): Promise<void> {
+    if (upload.previewUploadId) {
+      await cancelUploadApi(upload.eventSlug, photoId, {
+        previewUploadId: upload.previewUploadId,
+        fileType: upload.fileType,
+      }).catch((err) => {
+        console.warn('[BackgroundSync] Failed to abort previous preview upload:', err);
+      });
+    }
+
     const { uploadId } = await startUpload(
-      eventSlug, photoId, `${photoId}_preview.jpg`,
+      upload.eventSlug, photoId, `${photoId}_preview.jpg`,
       undefined, undefined, undefined, undefined, undefined, undefined,
       undefined, undefined, undefined, undefined, undefined, undefined,
       undefined, true,
     );
+    upload.previewUploadId = uploadId;
+    await this.updateQueueItemAndSync(upload.id, { previewUploadId: uploadId });
     const parts: Array<{ partNumber: number; etag: string }> = [];
     const totalParts = Math.ceil(previewBlob.size / CHUNK_SIZE);
     for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
       const start = (partNumber - 1) * CHUNK_SIZE;
       const end = Math.min(start + CHUNK_SIZE, previewBlob.size);
       const chunk = previewBlob.slice(start, end);
-      const { etag } = await this.uploadChunkWithRetry(eventSlug, photoId, uploadId, partNumber, chunk, true);
+      const { etag } = await this.uploadChunkWithRetry(upload.eventSlug, photoId, uploadId, partNumber, chunk, true);
       parts.push({ partNumber, etag });
     }
-    await completeUpload(eventSlug, photoId, uploadId, parts, true);
+    await completeUpload(upload.eventSlug, photoId, uploadId, parts, true);
+    upload.previewUploadId = undefined;
+    await this.updateQueueItemAndSync(upload.id, { previewUploadId: undefined });
   }
 
   /**
@@ -568,8 +581,12 @@ class BackgroundSyncService {
             // The resumed multipart upload may have expired or been aborted
             // server-side — fall back to a brand-new upload and retry once
             // from scratch rather than getting stuck retrying forever.
+            const staleUploadId = uploadId;
             parts = [];
             completedChunks = 0;
+            await cancelUploadApi(upload.eventSlug, photoId, { uploadId: staleUploadId, fileType }).catch((cleanupErr) => {
+              console.warn('[BackgroundSync] Failed to abort expired multipart upload:', cleanupErr);
+            });
             const uploadData = await startOriginalUpload();
             uploadId = uploadData.uploadId;
             currentUploadId = uploadId;
@@ -613,7 +630,7 @@ class BackgroundSyncService {
           // same fast-loading preview image as web-uploaded ones, instead of
           // permanently serving the full-size original in the gallery.
           const previewBlob = await createPreview(upload.file);
-          await this.uploadPreview(upload.eventSlug, photoId, previewBlob);
+          await this.uploadPreview(upload, photoId, previewBlob);
           await this.updateQueueItemAndSync(upload.id, {
             status: 'completed',
             progress: 100,
@@ -668,13 +685,26 @@ class BackgroundSyncService {
           // upload is failing, uploadId/parts must be preserved so a later
           // retry doesn't wastefully re-upload the original from scratch.
           if (!originalDone) {
-            if (photoId && currentUploadId) {
-              cancelUploadApi(upload.eventSlug, photoId, { uploadId: currentUploadId, fileType: upload.fileType }).catch(cleanupErr => {
+            if (photoId && (currentUploadId || upload.previewUploadId)) {
+              cancelUploadApi(upload.eventSlug, photoId, {
+                uploadId: currentUploadId,
+                previewUploadId: upload.previewUploadId,
+                fileType: upload.fileType,
+              }).catch(cleanupErr => {
                 console.warn('[BackgroundSync] Failed to abort orphaned multipart upload:', cleanupErr);
               });
             }
             updates.uploadId = undefined;
             updates.parts = [];
+            updates.previewUploadId = undefined;
+          } else if (photoId && upload.previewUploadId) {
+            cancelUploadApi(upload.eventSlug, photoId, {
+              previewUploadId: upload.previewUploadId,
+              fileType: upload.fileType,
+            }).catch(cleanupErr => {
+              console.warn('[BackgroundSync] Failed to abort orphaned preview upload:', cleanupErr);
+            });
+            updates.previewUploadId = undefined;
           }
 
           await this.updateQueueItemAndSync(upload.id, updates);

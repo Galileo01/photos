@@ -6,11 +6,14 @@ import { useAuth } from '../contexts/AuthContext';
 import { config } from '../config';
 import UserSettings from './UserSettings';
 import { useUploadContext } from '../contexts/UploadContext';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
   const { user, isAuthenticated, login, logout } = useAuth();
   const { hasActiveUploads, totalCount, completedCount } = useUploadContext();
+  const { t } = useTranslation(['common', 'account']);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -51,7 +54,7 @@ const Navbar: React.FC = () => {
     
     // Show confirmation for mobile users
     if (Capacitor.isNativePlatform()) {
-      const confirmed = window.confirm('Are you sure you want to log out?');
+      const confirmed = window.confirm(t('account:auth.logoutConfirm'));
       if (!confirmed) return;
     }
     
@@ -81,26 +84,26 @@ const Navbar: React.FC = () => {
           <div className="flex items-center gap-1 sm:gap-2">
             <Link to="/events" className={linkClass('/events')}>
               <LayoutGrid className="w-4 h-4 sm:mr-0" aria-hidden="true" />
-              <span className="hidden sm:inline">Events</span>
-              <span className="sr-only sm:hidden">Events</span>
+              <span className="hidden sm:inline">{t('navigation.events')}</span>
+              <span className="sr-only sm:hidden">{t('navigation.events')}</span>
             </Link>
             
             <Link to="/favorites" className={linkClass('/favorites')}>
               <Heart className="w-4 h-4 sm:mr-0" aria-hidden="true" />
-              <span className="hidden sm:inline">Favorites</span>
-              <span className="sr-only sm:hidden">Favorites</span>
+              <span className="hidden sm:inline">{t('navigation.favorites')}</span>
+              <span className="sr-only sm:hidden">{t('navigation.favorites')}</span>
             </Link>
             
             <Link to="/map" className={linkClass('/map')}>
               <MapPin className="w-4 h-4 sm:mr-0" aria-hidden="true" />
-              <span className="hidden sm:inline">Map</span>
-              <span className="sr-only sm:hidden">Map</span>
+              <span className="hidden sm:inline">{t('navigation.map')}</span>
+              <span className="sr-only sm:hidden">{t('navigation.map')}</span>
             </Link>
             
             <Link to="/timeline" className={linkClass('/timeline')}>
               <Clock className="w-4 h-4 sm:mr-0" aria-hidden="true" />
-              <span className="hidden sm:inline">Timeline</span>
-              <span className="sr-only sm:hidden">Timeline</span>
+              <span className="hidden sm:inline">{t('navigation.timeline')}</span>
+              <span className="sr-only sm:hidden">{t('navigation.timeline')}</span>
             </Link>
             
             {/* User Menu */}
@@ -110,7 +113,7 @@ const Navbar: React.FC = () => {
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    aria-label="User menu"
+                    aria-label={t('navigation.userMenu')}
                   >
                     <User className="w-4 h-4" aria-hidden="true" />
                     <span className="hidden lg:inline max-w-[150px] truncate">
@@ -130,7 +133,7 @@ const Navbar: React.FC = () => {
                         </p>
                         {user?.favorites_count !== undefined && (
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {user.favorites_count} favorite{user.favorites_count !== 1 ? 's' : ''}
+                            {t('account:profile.favoritesCount', { count: user.favorites_count })}
                           </p>
                         )}
                       </div>
@@ -142,8 +145,9 @@ const Navbar: React.FC = () => {
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
                       >
                         <Settings className="w-4 h-4" />
-                        Settings
+                        {t('navigation.settings')}
                       </button>
+                      <LanguageSwitcher variant="menu" onLanguageChanged={() => setShowUserMenu(false)} />
                       {user?.isAdmin && (
                         <Link
                           to="/admin"
@@ -151,7 +155,7 @@ const Navbar: React.FC = () => {
                           className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
                         >
                           <ShieldCheck className="w-4 h-4" />
-                          Admin Dashboard
+                          {t('navigation.adminDashboard')}
                         </Link>
                       )}
                       <button
@@ -159,7 +163,7 @@ const Navbar: React.FC = () => {
                         className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
                       >
                         <LogOut className="w-4 h-4" />
-                        Logout
+                        {t('navigation.logout')}
                       </button>
                     </div>
                   )}
@@ -168,10 +172,10 @@ const Navbar: React.FC = () => {
                 <button
                   onClick={login}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  aria-label="Login"
+                  aria-label={t('navigation.login')}
                 >
                   <LogIn className="w-4 h-4" aria-hidden="true" />
-                  <span className="hidden sm:inline">Login</span>
+                  <span className="hidden sm:inline">{t('navigation.login')}</span>
                 </button>
               )}
             </div>

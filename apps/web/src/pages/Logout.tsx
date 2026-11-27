@@ -2,10 +2,12 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { getConfig } from '../config';
+import { useTranslation } from 'react-i18next';
 
 const Logout: React.FC = () => {
   const navigate = useNavigate();
   const config = getConfig();
+  const { t } = useTranslation('account');
 
   useEffect(() => {
     // Set logout flag to prevent "session expired" message
@@ -34,14 +36,14 @@ const Logout: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <SEO
-        title={`Logging Out - ${config.appName}`}
-        description="Logging you out..."
+        title={`${t('auth.loggingOut')} - ${config.appName}`}
+        description={t('auth.loggingOutDescription')}
         url={`${window.location.origin}/logout`}
       />
       <div className="text-center bg-white p-8 rounded-xl shadow-lg max-w-md">
         <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Logging Out...</h1>
-        <p className="text-gray-600">Clearing your session, please wait...</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('auth.loggingOut')}</h1>
+        <p className="text-gray-600">{t('auth.loggingOutDescription')}</p>
       </div>
     </div>
   );

@@ -1,5 +1,7 @@
 # Mobile OAuth Deployment Guide
 
+**English** | [简体中文](mobile-oauth.zh.md)
+
 ## Overview
 
 This guide explains how to set up OAuth authentication for the mobile app (Android). The mobile app uses Cloudflare Access for authentication with deep linking support.

@@ -30,7 +30,6 @@ import nl.thijsvtol.photos.R;
 public class SyncNotifier {
 
     private static final String CHANNEL_ID = "upload_progress";
-    private static final String CHANNEL_NAME = "Upload Progress";
 
     /** Ongoing progress notification (also the foreground-service notification). */
     public static final int PROGRESS_NOTIFICATION_ID = 999999100;
@@ -56,9 +55,9 @@ public class SyncNotifier {
     private void ensureChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && manager != null) {
             NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_LOW
+                CHANNEL_ID, context.getString(R.string.upload_channel_name), NotificationManager.IMPORTANCE_LOW
             );
-            channel.setDescription("Shows progress of photo uploads");
+            channel.setDescription(context.getString(R.string.upload_channel_description));
             manager.createNotificationChannel(channel);
         }
     }
@@ -123,7 +122,7 @@ public class SyncNotifier {
             .setLocalOnly(true)
             .setSilent(true)
             .setContentIntent(contentIntent(null))
-            .addAction(0, "Stop", actionIntent(ACTION_STOP_SYNC, 1));
+            .addAction(0, context.getString(R.string.upload_stop), actionIntent(ACTION_STOP_SYNC, 1));
     }
 
     /**
@@ -134,7 +133,11 @@ public class SyncNotifier {
      */
     public ForegroundInfo initialForegroundInfo() {
         NotificationCompat.Builder builder =
-            progressBuilder("Uploading photos to your library", "Checking folders for new photos…", true)
+            progressBuilder(
+                context.getString(R.string.sync_uploading_title),
+                context.getString(R.string.sync_checking_folders),
+                true
+            )
                 .setProgress(0, 0, true);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -169,8 +172,8 @@ public class SyncNotifier {
         if (!foreground) return;
         notifyProgress(
             progressBuilder(
-                "Uploading photos to your library",
-                detail != null ? detail : "Checking folders for new photos…",
+                context.getString(R.string.sync_uploading_title),
+                detail != null ? detail : context.getString(R.string.sync_checking_folders),
                 true
             ).setProgress(0, 0, true),
             true
@@ -188,8 +191,8 @@ public class SyncNotifier {
         int done, int total, String folderLabel, String filename, int filePercent,
         String eventSlug, boolean force
     ) {
-        String title = "Uploading photos to your library";
-        String text = "Photo " + (done + 1) + " of " + total
+        String title = context.getString(R.string.sync_uploading_title);
+        String text = context.getString(R.string.sync_photo_progress, done + 1, total)
             + (folderLabel != null ? " • " + folderLabel : "");
         NotificationCompat.Builder builder = progressBuilder(title, text, foreground)
             .setProgress(Math.max(total, 1), done, false)
@@ -269,19 +272,25 @@ public class SyncNotifier {
         StringBuilder body = new StringBuilder();
 
         if (quarantined == 0) {
-            title = "✓ Photos uploaded";
-            body.append(uploaded).append(uploaded == 1 ? " photo uploaded" : " photos uploaded");
+            title = context.getString(R.string.sync_uploaded_title);
+            body.append(context.getResources().getQuantityString(R.plurals.sync_uploaded_count, uploaded, uploaded));
             if (duplicates > 0) {
-                body.append(" · ").append(duplicates).append(" already synced");
+                body.append(" · ").append(context.getResources().getQuantityString(
+                    R.plurals.sync_already_synced_count, duplicates, duplicates
+                ));
             }
         } else {
-            title = uploaded > 0 ? "Some photos couldn't be uploaded" : "Photos couldn't be uploaded";
+            title = context.getString(
+                uploaded > 0 ? R.string.sync_partial_failure_title : R.string.sync_failure_title
+            );
             if (uploaded > 0) {
-                body.append(uploaded).append(" uploaded. ");
+                body.append(context.getResources().getQuantityString(
+                    R.plurals.sync_uploaded_count, uploaded, uploaded
+                )).append(". ");
             }
-            body.append(quarantined)
-                .append(quarantined == 1 ? " file was skipped after repeated failures" : " files were skipped after repeated failures")
-                .append(" — open the app to see why and retry.");
+            body.append(context.getResources().getQuantityString(
+                R.plurals.sync_skipped_count, quarantined, quarantined
+            )).append(context.getString(R.string.sync_skipped_suffix));
         }
 
         showSummary(title, body.toString(), eventSlug);
@@ -294,8 +303,8 @@ public class SyncNotifier {
      */
     public void showAuthExpired() {
         showSummary(
-            "Sign in to continue syncing",
-            "Your session expired, so folder sync is paused. Open the app to sign in again.",
+            context.getString(R.string.sync_sign_in_title),
+            context.getString(R.string.sync_sign_in_body),
             null
         );
     }

@@ -1,5 +1,7 @@
 # Setup Scripts
 
+**English** | [简体中文](README.zh.md)
+
 This directory contains helper scripts for setting up and deploying the photo sharing application.
 
 ## Available Scripts

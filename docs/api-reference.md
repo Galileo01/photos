@@ -1,5 +1,7 @@
 # API Documentation
 
+**English** | [简体中文](api-reference.zh.md)
+
 Complete REST API reference for the photo sharing application (Cloudflare Worker, `apps/worker`).
 
 ## Base URL
@@ -83,8 +85,9 @@ requests (single range) for video scrubbing.
 
 | Method | Path | Description |
 | --- | --- | --- |
-| GET | `/media/:slug/preview/:photoId` | Client-generated preview (max 1920px JPEG for images; original bytes for video) |
+| GET | `/media/:slug/preview/:photoId` | Preview media (client-generated 1920px JPEG for images; scheduled 1080p H.264 derivative for videos, with fallback to the original) |
 | GET | `/media/:slug/original/:photoId` | Full-resolution / original file |
+| GET | `/media/:slug/poster/:photoId` | JPEG poster frame for a video |
 | GET | `/media/:slug/ig/:photoId` | Legacy path kept only for backward compatibility with old links; no new files are written here (see [image-processing.md](image-processing.md)) |
 
 ---

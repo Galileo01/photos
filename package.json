@@ -10,9 +10,13 @@
     "db:setup": "bash scripts/db-setup.sh",
     "backup": "bash scripts/backup-to-b2.sh",
     "deploy:helper": "bash scripts/deploy-helper.sh",
+    "docs:i18n:check": "node scripts/check-doc-locales.mjs",
     "dev": "concurrently \"npm --prefix apps/worker run dev\" \"npm --prefix apps/web run dev\"",
     "install:all": "npm --prefix apps/worker install && npm --prefix apps/web install",
     "build:all": "npm --prefix apps/worker run build && npm --prefix apps/web run build",
+    "build:personal": "npm --prefix apps/worker run build && npm --prefix apps/web run build:personal",
+    "verify:personal": "npm run docs:i18n:check && npm --prefix apps/web run lint && npm run test:all && npm run build:personal",
+    "deploy:personal": "node apps/worker/node_modules/wrangler/bin/wrangler.js deploy --env personal",
     "test:all": "npm --prefix apps/worker test && npm --prefix apps/web test"
   },
   "keywords": [

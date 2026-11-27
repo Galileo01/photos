@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">照片</string>
+    <string name="title_activity_main">照片</string>
+    <string name="upload_channel_name">上传进度</string>
+    <string name="upload_channel_description">显示照片上传进度</string>
+    <string name="upload_stop">停止</string>
+    <string name="upload_cancel">取消上传</string>
+    <string name="upload_in_progress">正在上传</string>
+    <string name="sync_uploading_title">正在将照片上传到图库</string>
+    <string name="sync_checking_folders">正在检查文件夹中的新照片…</string>
+    <string name="sync_photo_progress">第 %1$d 张，共 %2$d 张</string>
+    <string name="sync_uploaded_title">✓ 照片已上传</string>
+    <string name="sync_partial_failure_title">部分照片无法上传</string>
+    <string name="sync_failure_title">照片无法上传</string>
+    <string name="sync_skipped_suffix"> — 请打开应用查看原因并重试。</string>
+    <string name="sync_sign_in_title">登录后继续同步</string>
+    <string name="sync_sign_in_body">会话已过期，文件夹同步已暂停。请打开应用重新登录。</string>
+    <plurals name="sync_new_files">
+        <item quantity="other">正在检查 %d 个新文件…</item>
+    </plurals>
+    <plurals name="sync_uploaded_count">
+        <item quantity="other">已上传 %d 张照片</item>
+    </plurals>
+    <plurals name="sync_already_synced_count">
+        <item quantity="other">%d 张已同步</item>
+    </plurals>
+    <plurals name="sync_skipped_count">
+        <item quantity="other">%d 个文件因多次失败而被跳过</item>
+    </plurals>
+</resources>

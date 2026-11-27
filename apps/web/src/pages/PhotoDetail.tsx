@@ -22,6 +22,8 @@ import { castService } from '../services/castService';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
+import { useTranslation } from 'react-i18next';
+import { localeForLanguage } from '../i18n/language';
 
 const PhotoDetail: React.FC = () => {
   const { slug, photoId } = useParams<{ slug: string; photoId: string }>();
@@ -30,6 +32,7 @@ const PhotoDetail: React.FC = () => {
   const { isAuthenticated, login, user } = useAuth();
   const toast = useToast();
   const { confirm, ConfirmDialog } = useConfirm();
+  const { t, i18n } = useTranslation(['photos', 'common']);
   const isNative = Capacitor.isNativePlatform();
   const [event, setEvent] = useState<Event | null>(null);
   const [photo, setPhoto] = useState<Photo | null>(null);
@@ -423,7 +426,6 @@ const PhotoDetail: React.FC = () => {
         }
       });
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, photosToUse, photo, slug, preloadedImages, showEditor]);
 
   // Check if current photo is favorited
@@ -586,7 +588,7 @@ const PhotoDetail: React.FC = () => {
       
       setError(null);
     } catch (err) {
-      setError('Failed to load photo');
+      setError(t('photos:detail.loadFailed'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -1222,7 +1224,7 @@ const PhotoDetail: React.FC = () => {
     // Fall back to clipboard copy if share API not available
     if (!platform) {
       await navigator.clipboard.writeText(url);
-      toast.showSuccess('Link copied to clipboard!');
+      toast.showSuccess(t('photos:detail.linkCopied'));
       return;
     }
 
@@ -1239,7 +1241,7 @@ const PhotoDetail: React.FC = () => {
         break;
       default:
         await navigator.clipboard.writeText(url);
-        toast.showSuccess('Link copied to clipboard!');
+        toast.showSuccess(t('photos:detail.linkCopied'));
         break;
     }
   };
@@ -1250,8 +1252,8 @@ const PhotoDetail: React.FC = () => {
     // Require authentication for favorites
     if (!isAuthenticated) {
       const shouldLogin = await confirm(
-        'Login Required',
-        'You need to be logged in to save favorites. Would you like to login now?'
+        t('photos:favorites.loginRequired'),
+        t('photos:detail.loginToSaveFavorite')
       );
       if (shouldLogin) {
         login();
@@ -1268,7 +1270,7 @@ const PhotoDetail: React.FC = () => {
       trackFavorite(photo.id, isFavorited ? 'remove' : 'add');
     } catch (err) {
       console.error('Failed to toggle favorite:', err);
-      toast.showError('Failed to update favorite. Please try again.');
+      toast.showError(t('photos:detail.favoriteFailed'));
     }
   };
 
@@ -1293,7 +1295,7 @@ const PhotoDetail: React.FC = () => {
       await replacePhoto(slug, photo.id, editedBlob, previewBlob);
       
       const mediaType = photo.file_type === 'video/mp4' ? 'video' : 'photo';
-      toast.showSuccess(`${mediaType} saved successfully!`);
+      toast.showSuccess(t('photos:detail.saved', { type: mediaType }));
       setShowEditor(false);
       
       // Force reload the photo to show the updated version
@@ -1353,7 +1355,7 @@ const PhotoDetail: React.FC = () => {
       setNamedPeople(people);
     } catch (err) {
       console.error('Failed to load people list', err);
-      toast.showError('Failed to load people list');
+      toast.showError(t('photos:detail.peopleLoadFailed'));
     } finally {
       setNamedPeopleLoading(false);
     }
@@ -1380,7 +1382,7 @@ const PhotoDetail: React.FC = () => {
       setShowPeopleEditor(false);
     } catch (err) {
       console.error('Failed to save people tags', err);
-      toast.showError('Failed to save people tags');
+      toast.showError(t('photos:detail.peopleSaveFailed'));
     } finally {
       setSavingPeopleTags(false);
     }
@@ -1399,7 +1401,7 @@ const PhotoDetail: React.FC = () => {
       setPhoto((prev) => (prev ? { ...prev, people: updatedPeople } : prev));
     } catch (err) {
       console.error('Failed to remove person from photo', err);
-      toast.showError('Failed to remove person from photo');
+      toast.showError(t('photos:detail.peopleRemoveFailed'));
     } finally {
       setRemovingPersonId(null);
     }
@@ -1423,12 +1425,12 @@ const PhotoDetail: React.FC = () => {
       // doc comment) so it reflects this the moment its overlay closes, without a re-fetch.
       updateNavPhoto(photo.id, { is_featured: nextFeaturedState });
 
-      toast.showSuccess(nextFeaturedState ? 'Photo marked as featured' : 'Featured status removed');
+      toast.showSuccess(nextFeaturedState ? t('photos:detail.featured') : t('photos:detail.featuredRemoved'));
       setShowMobileMenu(false);
     } catch (err) {
       console.error('Failed to update featured status:', err);
       await haptics.error();
-      toast.showError('Failed to update featured status. You may need admin access.');
+      toast.showError(t('photos:detail.featuredFailed'));
     }
   };
 
@@ -1448,7 +1450,7 @@ const PhotoDetail: React.FC = () => {
     try {
       await deletePhoto(currentPhotoId);
       await haptics.success();
-      toast.showSuccess('Photo deleted successfully');
+      toast.showSuccess(t('photos:detail.deleted'));
       setShowMobileMenu(false);
 
       // Immediately stop and detach any playing video so its audio/frame
@@ -1503,7 +1505,7 @@ const PhotoDetail: React.FC = () => {
     } catch (err) {
       console.error('Failed to delete photo:', err);
       await haptics.error();
-      toast.showError('Failed to delete photo. Please try again.');
+      toast.showError(t('photos:detail.deleteFailed'));
     }
   };
 
@@ -1512,7 +1514,7 @@ const PhotoDetail: React.FC = () => {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('common:states.loading')}</p>
         </div>
       </div>
     );
@@ -1533,14 +1535,14 @@ const PhotoDetail: React.FC = () => {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{event?.name}</h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">This photo is password protected. Please enter the event password to view it.</p>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">{t('photos:detail.passwordDescription')}</p>
           
           <form onSubmit={handleLogin}>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
+              placeholder={t('photos:detail.passwordPlaceholder')}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
               required
             />
@@ -1555,24 +1557,34 @@ const PhotoDetail: React.FC = () => {
               type="submit"
               className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             >
-              Unlock Photo
+              {t('photos:detail.unlockPhoto')}
             </button>
           </form>
           
           <Link to="/events" className="block mt-4 text-center text-blue-600 hover:text-blue-700">
-            ← Back to Events
+            {t('photos:detail.backToEvents')}
           </Link>
         </div>
       </div>
     );
   }
 
+  const photoLocation = photo?.city ? t('photos:detail.inCity', { city: photo.city }) : '';
+  const photoEquipment = photo?.camera_model
+    ? t('photos:detail.shotWith', {
+        camera: photo.camera_model,
+        lens: photo.lens_model ? t('photos:detail.andLens', { lens: photo.lens_model }) : '',
+      })
+    : '';
+
   const structuredData = photo ? {
     '@context': 'https://schema.org',
     '@type': 'ImageObject',
     contentUrl: getPreviewUrl(slug!, photo.id, photo.file_type, photo.cache_version),
-    name: `Photo from ${event?.name}`,
-    caption: photo.ai_caption?.trim() || `Photo from ${event?.name} event${photo.city ? ` in ${photo.city}` : ''}`,
+    name: t('photos:detail.photoFrom', { eventName: event?.name || '' }),
+    caption: photo.ai_caption?.trim() || (photo.city
+      ? t('photos:detail.photoFromEventInCity', { eventName: event?.name || '', city: photo.city })
+      : t('photos:detail.photoFromEvent', { eventName: event?.name || '' })),
     creator: {
       '@type': 'Person',
       name: config.brandName
@@ -1590,8 +1602,11 @@ const PhotoDetail: React.FC = () => {
   } : undefined;
 
   const photoDescription = photo
-    ? (photo.ai_caption?.trim()
-        || `Photo from ${event?.name}${photo.city ? ` in ${photo.city}` : ''}. ${photo.camera_model ? `Shot with ${photo.camera_model}${photo.lens_model ? ` and ${photo.lens_model}` : ''}.` : ''}`)
+    ? (photo.ai_caption?.trim() || t('photos:detail.seoDescription', {
+        eventName: event?.name || '',
+        location: photoLocation,
+        equipment: photoEquipment,
+      }))
     : '';
 
   return (
@@ -1599,7 +1614,7 @@ const PhotoDetail: React.FC = () => {
       {ConfirmDialog}
       {photo && (
         <SEO
-          title={`Photo from ${event?.name} - ${config.appName}`}
+          title={`${t('photos:detail.photoFrom', { eventName: event?.name || '' })} - ${config.appName}`}
           description={photoDescription}
           keywords={`${event?.name}, photo, ${photo.city || ''}, event photography, ${photo.camera_model || ''}`}
           url={`${window.location.origin}/events/${slug}/${photoId}`}
@@ -1760,7 +1775,7 @@ const PhotoDetail: React.FC = () => {
               {videoError && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white gap-3">
                   <Info className="w-8 h-8 opacity-70" />
-                  <p className="text-sm opacity-90">This video couldn't be played</p>
+                  <p className="text-sm opacity-90">{t('photos:detail.videoFailed')}</p>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1787,7 +1802,7 @@ const PhotoDetail: React.FC = () => {
               {previousPhoto && previousPhoto.file_type !== 'video/mp4' && (
                 <img
                   src={getPreviewUrl(slug!, previousPhoto.id, previousPhoto.file_type, previousPhoto.cache_version)}
-                  alt="Previous"
+                  alt={t('photos:detail.previous')}
                   className={`max-w-full max-h-full object-contain absolute transition-opacity duration-300 ${
                     imageLoaded ? 'opacity-0' : 'opacity-100'
                   }`}
@@ -1830,7 +1845,7 @@ const PhotoDetail: React.FC = () => {
             <button
               onClick={closeOverlay}
               className="text-white p-2 -ml-2 hover:bg-white/10 rounded-full transition"
-              aria-label="Back"
+              aria-label={t('common:actions.back')}
             >
               <ArrowLeft className="w-6 h-6" />
             </button>
@@ -1848,7 +1863,7 @@ const PhotoDetail: React.FC = () => {
               <button
                 onClick={() => setShowMobileMenu(!showMobileMenu)}
                 className="text-white p-2 -mr-2 hover:bg-white/10 rounded-full transition"
-                aria-label="More options"
+                aria-label={t('photos:detail.moreOptions')}
               >
                 <MoreVertical className="w-6 h-6" />
               </button>
@@ -1870,7 +1885,7 @@ const PhotoDetail: React.FC = () => {
 
                     {isSlideshow && (
                       <div className="px-4 py-2 space-y-1">
-                        <div className="text-gray-400 text-xs mb-1">Speed</div>
+                        <div className="text-gray-400 text-xs mb-1">{t('photos:detail.speed')}</div>
                         {[{ label: 'Fast (2s)', ms: 2000 }, { label: 'Normal (3s)', ms: 3000 }, { label: 'Slow (5s)', ms: 5000 }, { label: 'Very Slow (10s)', ms: 10000 }].map(opt => (
                           <button
                             key={opt.ms}
@@ -1904,7 +1919,7 @@ const PhotoDetail: React.FC = () => {
                       className="w-full px-4 py-2.5 text-white text-sm font-medium flex items-center gap-3 hover:bg-white/10 transition"
                     >
                       <span className="w-5 h-5 flex items-center justify-center text-base font-bold">?</span>
-                      Keyboard Shortcuts
+                      {t('photos:detail.shortcuts')}
                     </button>
 
                     {canEditMedia && (
@@ -1918,7 +1933,7 @@ const PhotoDetail: React.FC = () => {
                           className="w-full px-4 py-2.5 text-white text-sm font-medium flex items-center gap-3 hover:bg-white/10 transition"
                         >
                           <Pencil className="w-5 h-5" />
-                          Edit {photo?.file_type === 'video/mp4' ? 'Video' : 'Photo'}
+                          {photo?.file_type === 'video/mp4' ? t('photos:detail.editVideo') : t('photos:detail.editPhoto')}
                         </button>
 
                         {canFeatureMedia && (
@@ -1930,7 +1945,7 @@ const PhotoDetail: React.FC = () => {
                             className="w-full px-4 py-2.5 text-white text-sm font-medium flex items-center gap-3 hover:bg-white/10 transition"
                           >
                             <Star className={`w-5 h-5 ${photo?.is_featured ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-                            {photo?.is_featured ? 'Unfeature' : 'Feature'}
+                            {photo?.is_featured ? t('photos:featured.unfeature') : t('photos:featured.feature')}
                           </button>
                         )}
 
@@ -1943,7 +1958,7 @@ const PhotoDetail: React.FC = () => {
                             className="w-full px-4 py-2.5 text-red-400 text-sm font-medium flex items-center gap-3 hover:bg-red-500/10 transition"
                           >
                             <Trash2 className="w-5 h-5" />
-                            Delete
+                            {t('photos:detail.delete')}
                           </button>
                         )}
                       </>
@@ -2064,7 +2079,7 @@ const PhotoDetail: React.FC = () => {
               className="flex flex-col items-center gap-1 text-white/90 p-2 hover:bg-white/10 rounded-xl transition active:scale-95"
             >
               <Share2 className="w-6 h-6" />
-              <span className="text-[10px] font-medium">Share</span>
+              <span className="text-[10px] font-medium">{t('photos:detail.share')}</span>
             </button>
 
             <CastButton
@@ -2082,7 +2097,7 @@ const PhotoDetail: React.FC = () => {
                 className="flex flex-col items-center gap-1 text-white/90 p-2 hover:bg-white/10 rounded-xl transition active:scale-95"
               >
                 <Download className="w-6 h-6" />
-                <span className="text-[10px] font-medium">Download</span>
+                <span className="text-[10px] font-medium">{t('common:actions.download')}</span>
               </button>
 
               {showDownloadMenu && (
@@ -2121,7 +2136,7 @@ const PhotoDetail: React.FC = () => {
               className="flex flex-col items-center gap-1 text-white/90 p-2 hover:bg-white/10 rounded-xl transition active:scale-95"
             >
               <Info className="w-6 h-6" />
-              <span className="text-[10px] font-medium">Info</span>
+              <span className="text-[10px] font-medium">{t('photos:detail.info')}</span>
             </button>
           </div>
         </div>
@@ -2139,7 +2154,7 @@ const PhotoDetail: React.FC = () => {
             <div className="sticky top-0 bg-gray-900 px-4 py-3 border-b border-white/10 shrink-0">
               <div className="w-10 h-1 bg-gray-600 rounded-full mx-auto mb-3" />
               <div className="flex items-center justify-between">
-                <h3 className="text-white text-lg font-semibold">Details</h3>
+                <h3 className="text-white text-lg font-semibold">{t('photos:detail.details')}</h3>
                 <button
                   onClick={() => setShowInfoSheet(false)}
                   className="text-gray-400 hover:text-white p-1 transition"
@@ -2164,22 +2179,22 @@ const PhotoDetail: React.FC = () => {
                 </h4>
                 <dl className="space-y-2.5 text-sm">
                   <div>
-                    <dt className="text-gray-500 text-xs">Captured</dt>
-                    <dd className="text-white">{photo?.capture_time ? new Date(photo.capture_time).toLocaleString() : 'Unknown'}</dd>
+                    <dt className="text-gray-500 text-xs">{t('photos:detail.captured')}</dt>
+                    <dd className="text-white">{photo?.capture_time ? new Date(photo.capture_time).toLocaleString(localeForLanguage(i18n.resolvedLanguage)) : t('common:states.unknown')}</dd>
                   </div>
                   {photo?.width && photo?.height && (
                     <div>
-                      <dt className="text-gray-500 text-xs">Dimensions</dt>
+                      <dt className="text-gray-500 text-xs">{t('photos:detail.dimensions')}</dt>
                       <dd className="text-white">{photo.width} × {photo.height} pixels</dd>
                     </div>
                   )}
                   <div>
-                    <dt className="text-gray-500 text-xs">Filename</dt>
+                    <dt className="text-gray-500 text-xs">{t('photos:detail.filename')}</dt>
                     <dd className="text-white text-xs break-all">{photo?.original_filename}</dd>
                   </div>
                   {photo?.uploader_name && (
                     <div>
-                      <dt className="text-gray-500 text-xs">Uploaded by</dt>
+                      <dt className="text-gray-500 text-xs">{t('photos:detail.uploadedBy')}</dt>
                       <dd className="text-white text-xs">{photo.uploader_name}</dd>
                     </div>
                   )}
@@ -2215,8 +2230,8 @@ const PhotoDetail: React.FC = () => {
                               onClick={() => handleRemovePersonFromPhoto(p.id)}
                               disabled={removingPersonId === p.id}
                               className="text-gray-400 hover:text-white disabled:opacity-50 rounded-full p-0.5 hover:bg-white/10 transition"
-                              aria-label={`Remove ${p.name} from this photo`}
-                              title={`Remove ${p.name} from this photo`}
+                              aria-label={t('photos:detail.removePerson', { name: p.name })}
+                              title={t('photos:detail.removePerson', { name: p.name })}
                             >
                               <X className="w-3.5 h-3.5" />
                             </button>
@@ -2225,14 +2240,14 @@ const PhotoDetail: React.FC = () => {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-gray-500 text-sm mb-2">No one tagged yet.</p>
+                    <p className="text-gray-500 text-sm mb-2">{t('photos:detail.noPeople')}</p>
                   )}
                   {canEditMedia && (
                     <button
                       onClick={handleOpenPeopleEditor}
                       className="text-blue-400 hover:text-blue-300 text-xs font-medium transition"
                     >
-                      {photo?.people && photo.people.length > 0 ? 'Edit people' : 'Tag people'}
+                      {photo?.people && photo.people.length > 0 ? t('photos:detail.editPeople') : t('photos:detail.tagPeople')}
                     </button>
                   )}
                 </div>
@@ -2241,7 +2256,7 @@ const PhotoDetail: React.FC = () => {
               {/* Camera Settings */}
               {(photo?.iso || photo?.aperture || photo?.shutter_speed || photo?.focal_length) && (
                 <div>
-                  <h4 className="text-white font-medium mb-3">⚙️ Camera Settings</h4>
+                  <h4 className="text-white font-medium mb-3">{t('photos:detail.cameraSettings')}</h4>
                   <dl className="grid grid-cols-2 gap-2.5 text-sm">
                     {photo.iso && (
                       <div>
@@ -2251,19 +2266,19 @@ const PhotoDetail: React.FC = () => {
                     )}
                     {photo.aperture && (
                       <div>
-                        <dt className="text-gray-500 text-xs">Aperture</dt>
+                        <dt className="text-gray-500 text-xs">{t('photos:detail.aperture')}</dt>
                         <dd className="text-white">{photo.aperture}</dd>
                       </div>
                     )}
                     {photo.shutter_speed && (
                       <div>
-                        <dt className="text-gray-500 text-xs">Exposure Time</dt>
+                        <dt className="text-gray-500 text-xs">{t('photos:detail.exposureTime')}</dt>
                         <dd className="text-white">{photo.shutter_speed}</dd>
                       </div>
                     )}
                     {photo.focal_length && (
                       <div>
-                        <dt className="text-gray-500 text-xs">Focal Length</dt>
+                        <dt className="text-gray-500 text-xs">{t('photos:detail.focalLength')}</dt>
                         <dd className="text-white">{photo.focal_length}</dd>
                       </div>
                     )}
@@ -2274,17 +2289,17 @@ const PhotoDetail: React.FC = () => {
               {/* Equipment */}
               {(photo?.camera_make || photo?.camera_model || photo?.lens_model) && (
                 <div>
-                  <h4 className="text-white font-medium mb-3">📸 Equipment</h4>
+                  <h4 className="text-white font-medium mb-3">{t('photos:detail.equipment')}</h4>
                   <dl className="space-y-2.5 text-sm">
                     {(photo.camera_make || photo.camera_model) && (
                       <div>
-                        <dt className="text-gray-500 text-xs">Device Model</dt>
+                        <dt className="text-gray-500 text-xs">{t('photos:detail.deviceModel')}</dt>
                         <dd className="text-white">{[photo.camera_make, photo.camera_model].filter(Boolean).join(' ')}</dd>
                       </div>
                     )}
                     {photo.lens_model && (
                       <div>
-                        <dt className="text-gray-500 text-xs">Lens</dt>
+                        <dt className="text-gray-500 text-xs">{t('photos:detail.lens')}</dt>
                         <dd className="text-white break-all">{photo.lens_model}</dd>
                       </div>
                     )}
@@ -2294,7 +2309,7 @@ const PhotoDetail: React.FC = () => {
 
               {/* Download section */}
               <div>
-                <h4 className="text-white font-medium mb-3">💾 Download</h4>
+                <h4 className="text-white font-medium mb-3">{t('photos:detail.download')}</h4>
                 <div className="flex gap-2.5">
                   <button
                     onClick={handleDownloadOriginal}
@@ -2332,7 +2347,7 @@ const PhotoDetail: React.FC = () => {
             <div className="fixed inset-0 z-[200] flex items-center justify-center bg-gray-900">
               <div className="text-center">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-                <p className="mt-4 text-gray-400">Loading editor...</p>
+                <p className="mt-4 text-gray-400">{t('photos:detail.loadingEditor')}</p>
               </div>
             </div>
           }>
@@ -2354,7 +2369,7 @@ const PhotoDetail: React.FC = () => {
             <div className="fixed inset-0 z-[200] flex items-center justify-center bg-gray-900">
               <div className="text-center">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-                <p className="mt-4 text-gray-400">Loading video editor...</p>
+                <p className="mt-4 text-gray-400">{t('photos:detail.loadingVideoEditor')}</p>
               </div>
             </div>
           }>
@@ -2379,7 +2394,7 @@ const PhotoDetail: React.FC = () => {
           >
             <div className="flex justify-between items-center mb-4 shrink-0">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Users className="w-5 h-5" /> Tag people
+                <Users className="w-5 h-5" /> {t('photos:detail.tagPeople')}
               </h2>
               <button
                 onClick={() => setShowPeopleEditor(false)}
@@ -2394,16 +2409,16 @@ const PhotoDetail: React.FC = () => {
               type="text"
               value={peopleSearchQuery}
               onChange={(e) => setPeopleSearchQuery(e.target.value)}
-              placeholder="Search people..."
+              placeholder={t('photos:detail.searchPeople')}
               className="mb-3 w-full px-3 py-2 bg-gray-700 text-white rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
             />
 
             <div className="flex-1 overflow-y-auto space-y-1 -mx-1 px-1">
               {namedPeopleLoading ? (
-                <p className="text-gray-400 text-sm py-4 text-center">Loading people...</p>
+                <p className="text-gray-400 text-sm py-4 text-center">{t('photos:detail.loadingPeople')}</p>
               ) : namedPeople.length === 0 ? (
                 <p className="text-gray-400 text-sm py-4 text-center">
-                  No named people yet — name someone in Admin → People first.
+                  {t('photos:detail.noNamedPeople')}
                 </p>
               ) : (
                 namedPeople
@@ -2432,14 +2447,14 @@ const PhotoDetail: React.FC = () => {
                 disabled={savingPeopleTags}
                 className="flex-1 py-2.5 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition disabled:opacity-50"
               >
-                Cancel
+                {t('common:actions.cancel')}
               </button>
               <button
                 onClick={handleSavePeopleTags}
                 disabled={savingPeopleTags}
                 className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50"
               >
-                {savingPeopleTags ? 'Saving...' : 'Save'}
+                {savingPeopleTags ? t('common:states.saving') : t('common:actions.save')}
               </button>
             </div>
           </div>
@@ -2451,32 +2466,32 @@ const PhotoDetail: React.FC = () => {
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-[100] p-4" onClick={() => setShowKeyboardHelp(false)}>
           <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-white">⌨️ Keyboard Shortcuts</h2>
+              <h2 className="text-xl font-bold text-white">{t('photos:detail.shortcuts')}</h2>
               <button onClick={() => setShowKeyboardHelp(false)} className="text-gray-400 hover:text-white">✕</button>
             </div>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between items-center">
-                <span className="text-gray-300">Navigate photos</span>
+                <span className="text-gray-300">{t('photos:detail.navigate')}</span>
                 <span className="bg-gray-700 px-3 py-1 rounded text-white font-mono">← →</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-300">Play/Pause slideshow</span>
+                <span className="text-gray-300">{t('photos:detail.playPause')}</span>
                 <span className="bg-gray-700 px-3 py-1 rounded text-white font-mono">SPACE</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-300">Toggle fullscreen</span>
+                <span className="text-gray-300">{t('photos:detail.fullscreen')}</span>
                 <span className="bg-gray-700 px-3 py-1 rounded text-white font-mono">F</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-300">Show details</span>
+                <span className="text-gray-300">{t('photos:detail.showDetails')}</span>
                 <span className="bg-gray-700 px-3 py-1 rounded text-white font-mono">I</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-300">Show this help</span>
+                <span className="text-gray-300">{t('photos:detail.showHelp')}</span>
                 <span className="bg-gray-700 px-3 py-1 rounded text-white font-mono">? or H</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-300">Exit / Go back</span>
+                <span className="text-gray-300">{t('photos:detail.exit')}</span>
                 <span className="bg-gray-700 px-3 py-1 rounded text-white font-mono">ESC</span>
               </div>
             </div>

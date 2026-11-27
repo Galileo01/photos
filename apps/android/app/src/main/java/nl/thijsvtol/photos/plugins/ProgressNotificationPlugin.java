@@ -21,7 +21,6 @@ import nl.thijsvtol.photos.UploadForegroundService;
 @CapacitorPlugin(name = "ProgressNotification")
 public class ProgressNotificationPlugin extends Plugin {
     private static final String CHANNEL_ID = "upload_progress";
-    private static final String CHANNEL_NAME = "Upload Progress";
     private NotificationManager notificationManager;
 
     @Override
@@ -35,10 +34,10 @@ public class ProgressNotificationPlugin extends Plugin {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                 CHANNEL_ID,
-                CHANNEL_NAME,
+                getContext().getString(R.string.upload_channel_name),
                 NotificationManager.IMPORTANCE_LOW // Low importance so it doesn't make sound
             );
-            channel.setDescription("Shows progress of photo uploads");
+            channel.setDescription(getContext().getString(R.string.upload_channel_description));
             notificationManager.createNotificationChannel(channel);
         }
     }
@@ -46,7 +45,7 @@ public class ProgressNotificationPlugin extends Plugin {
     @PluginMethod
     public void show(PluginCall call) {
         Integer id = call.getInt("id");
-        String title = call.getString("title", "Upload in progress");
+        String title = call.getString("title", getContext().getString(R.string.upload_in_progress));
         String body = call.getString("body", "");
         String largeBody = call.getString("largeBody");
         Integer progress = call.getInt("progress", 0);
@@ -139,7 +138,7 @@ public class ProgressNotificationPlugin extends Plugin {
             return;
         }
         String title = call.getString("title", "Uploading photos");
-        String body = call.getString("body", "Upload in progress");
+        String body = call.getString("body", getContext().getString(R.string.upload_in_progress));
 
         Intent intent = new Intent(getContext(), UploadForegroundService.class);
         intent.putExtra(UploadForegroundService.EXTRA_NOTIFICATION_ID, id);

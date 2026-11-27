@@ -1,5 +1,7 @@
 # Configuration Guide
 
+**English** | [简体中文](configuration.zh.md)
+
 This guide explains how to configure the photo sharing application for your own deployment.
 
 ## Overview

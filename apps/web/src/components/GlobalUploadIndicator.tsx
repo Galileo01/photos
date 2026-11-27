@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { CheckCircle, AlertCircle, Loader2, ChevronDown, ChevronUp, RotateCcw, X } from 'lucide-react';
 import { useUploadContext } from '../contexts/UploadContext';
 import { MAX_RETRIES } from '../services/uploadManager';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Global upload indicator rendered at app root — visible on ALL pages.
@@ -10,6 +11,7 @@ import { MAX_RETRIES } from '../services/uploadManager';
  * Hidden on photo detail page to avoid overlapping fullscreen viewer controls.
  */
 const GlobalUploadIndicator: React.FC = () => {
+  const { t } = useTranslation(['photos', 'common']);
   const location = useLocation();
   const {
     queueItems,
@@ -60,10 +62,10 @@ const GlobalUploadIndicator: React.FC = () => {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-900 dark:text-white font-medium truncate">
                   {hasActiveUploads
-                    ? `Uploading ${remainingCount} item${remainingCount !== 1 ? 's' : ''}…`
+                    ? t('photos:upload.active', { count: remainingCount })
                     : hasFailedUploads
-                    ? `${failedItems.length} upload${failedItems.length !== 1 ? 's' : ''} failed`
-                    : `${completedCount} upload${completedCount !== 1 ? 's' : ''} complete`}
+                    ? t('photos:upload.failed', { count: failedItems.length })
+                    : t('photos:upload.complete', { count: completedCount })}
                 </span>
                 <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0 ml-2" />
               </div>
@@ -95,7 +97,7 @@ const GlobalUploadIndicator: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
-            Uploads {totalCount > 0 && `(${completedCount}/${totalCount})`}
+            {t('photos:upload.uploads')} {totalCount > 0 && `(${completedCount}/${totalCount})`}
           </h3>
           <div className="flex items-center gap-2">
             {(hasActiveUploads || hasFailedUploads) && (
@@ -103,7 +105,7 @@ const GlobalUploadIndicator: React.FC = () => {
                 onClick={cancelAll}
                 className="px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition"
               >
-                Cancel All
+                {t('photos:upload.cancelAll')}
               </button>
             )}
             {hasFailedUploads && (
@@ -112,7 +114,7 @@ const GlobalUploadIndicator: React.FC = () => {
                 className="px-3 py-1 text-xs bg-red-600 text-white rounded-full hover:bg-red-700 transition flex items-center gap-1"
               >
                 <RotateCcw className="w-3 h-3" />
-                Retry All
+                {t('photos:upload.retryAllShort')}
               </button>
             )}
             {completedCount > 0 && !hasActiveUploads && (
@@ -120,7 +122,7 @@ const GlobalUploadIndicator: React.FC = () => {
                 onClick={clearCompleted}
                 className="px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition"
               >
-                Clear
+                {t('photos:upload.clear')}
               </button>
             )}
             <button
@@ -136,7 +138,7 @@ const GlobalUploadIndicator: React.FC = () => {
         <div className="overflow-y-auto flex-1 max-h-[50vh]">
           {queueItems.length === 0 ? (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
-              No uploads.
+              {t('photos:upload.empty')}
             </div>
           ) : (
             <div className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -160,18 +162,18 @@ const GlobalUploadIndicator: React.FC = () => {
                     )}
                     {item.status === 'uploading' && (
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {item.phase === 'preview' ? 'Uploading preview…' : 'Uploading…'}
+                        {item.phase === 'preview' ? t('photos:upload.preview') : t('common:states.uploading')}
                       </p>
                     )}
                     {item.status === 'pending' && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Waiting to upload…</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('photos:upload.waiting')}</p>
                     )}
                     {item.status === 'failed' && (
-                      <p className="text-xs text-red-500 truncate mt-0.5">{item.error || 'Upload failed'}</p>
+                      <p className="text-xs text-red-500 truncate mt-0.5">{item.error || t('photos:upload.failedMessage')}</p>
                     )}
                     {item.status === 'failed' && (item.retries || 0) >= MAX_RETRIES && (
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        Auto-retry stopped after {MAX_RETRIES} attempts — retry to try again.
+                        {t('photos:upload.retryStopped', { count: MAX_RETRIES })}
                       </p>
                     )}
                   </div>
@@ -181,7 +183,7 @@ const GlobalUploadIndicator: React.FC = () => {
                     <button
                       onClick={() => retryUpload(item.id)}
                       className="flex-shrink-0 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                      title="Retry"
+                      title={t('common:actions.retry')}
                     >
                       <RotateCcw className="w-4 h-4 text-gray-500" />
                     </button>
@@ -193,7 +195,7 @@ const GlobalUploadIndicator: React.FC = () => {
                     <button
                       onClick={() => cancelUpload(item.id)}
                       className="flex-shrink-0 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                      title={item.status === 'failed' ? 'Remove' : 'Cancel'}
+                      title={item.status === 'failed' ? t('common:actions.remove') : t('common:actions.cancel')}
                     >
                       <X className="w-4 h-4 text-gray-500" />
                     </button>
@@ -210,7 +212,7 @@ const GlobalUploadIndicator: React.FC = () => {
                   onClick={() => setVisibleCount(c => c + 50)}
                   className="w-full px-4 py-2 text-xs text-blue-600 dark:text-blue-400 text-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
                 >
-                  +{queueItems.length - visibleCount} more — show more
+                  {t('photos:upload.more', { count: queueItems.length - visibleCount })}
                 </button>
               )}
             </div>

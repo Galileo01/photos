@@ -1,0 +1,78 @@
+{
+  "settings": {
+    "title": "用户设置",
+    "profileAndTheme": "个人资料与主题",
+    "collaborations": "协作活动",
+    "theme": "主题",
+    "themeLight": "浅色",
+    "themeDark": "深色",
+    "themeSystem": "跟随系统",
+    "displayName": "显示名称",
+    "displayNamePlaceholder": "输入显示名称",
+    "saveProfile": "保存个人资料",
+    "email": "邮箱",
+    "downloadLocation": "下载位置（Android）",
+    "selectFolder": "选择文件夹",
+    "chooseFolder": "选择文件夹…",
+    "browse": "浏览",
+    "customPath": "自定义路径",
+    "saveDownloadLocation": "保存下载位置"
+  },
+  "collaborations": {
+    "title": "我参与协作的活动",
+    "loading": "正在加载协作活动…",
+    "empty": "暂无协作活动。",
+    "canUpload": "可以上传",
+    "invited": "受邀于 {{date}}",
+    "viewEvent": "查看活动"
+  },
+  "downloadPaths": {
+    "downloads": "下载",
+    "documents": "文档",
+    "pictures": "图片",
+    "custom": "自定义",
+    "enterCustomPath": "输入自定义路径",
+    "currentLocation": "当前下载位置：",
+    "notSet": "尚未设置",
+    "tipTitle": "提示：",
+    "tipBody": "可以使用“浏览”选择设备上的任意文件夹，也可以手动输入路径。"
+  },
+  "profile": {
+    "favoritesCount_one": "{{count}} 项收藏",
+    "favoritesCount_other": "{{count}} 项收藏",
+    "nameRequired": "显示名称不能为空",
+    "nameUpdated": "显示名称已更新",
+    "nameUpdateFailed": "更新显示名称失败，请重试。",
+    "fullNameTitle": "还差一步",
+    "fullNameDescription": "请输入你的完整姓名，便于其他协作者识别你，并了解照片的上传者。",
+    "fullNamePlaceholder": "完整姓名，例如：张三",
+    "fullNameRequired": "请输入名字和姓氏。",
+    "fullNameSaveFailed": "姓名保存失败，请重试。"
+  },
+  "download": {
+    "pathRequired": "路径不能为空",
+    "locationSaved": "下载位置已保存，后续下载将使用此位置。",
+    "folderSelectionFailed": "选择文件夹失败：{{message}}"
+  },
+  "auth": {
+    "logoutConfirm": "确定要退出登录吗？",
+    "authenticationFailed": "登录失败，请重试。",
+    "loggingOut": "正在退出登录...",
+    "loggingOutDescription": "正在清除会话，请稍候..."
+  },
+  "invite": {
+    "invalid": "邀请链接无效",
+    "failed": "接受邀请失败",
+    "processing": "正在处理邀请",
+    "processingDescription": "正在将你添加为协作者，请稍候...",
+    "loginRequired": "需要登录",
+    "loginDescription": "登录后才能接受协作邀请。",
+    "loginAction": "登录并继续",
+    "welcome": "欢迎加入！",
+    "success": "你已成为 {{event}} 的协作者，现在可以向该活动上传照片和视频。",
+    "redirecting": "正在前往活动图库...",
+    "already": "你已经是协作者了！",
+    "alreadyDescription": "正在前往活动图库...",
+    "unable": "无法接受邀请"
+  }
+}

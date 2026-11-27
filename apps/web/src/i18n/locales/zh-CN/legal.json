@@ -1,0 +1,10 @@
+{
+  "privacy": {
+    "title": "隐私政策",
+    "lastUpdated": "最后更新：{{date}}"
+  },
+  "usage": {
+    "title": "照片使用说明",
+    "lastUpdated": "最后更新：{{date}}"
+  }
+}

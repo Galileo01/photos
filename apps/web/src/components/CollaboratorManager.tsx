@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Capacitor } from '@capacitor/core';
 import { UserPlus, X, Mail, Check, Link as LinkIcon, Copy, Trash2 } from 'lucide-react';
 import { getCollaborators, inviteCollaborator, removeCollaborator, searchUsers, createInviteLink, getInviteLinks, revokeInviteLink, updateCollaboratorRole } from '../api';
 import type { Collaborator, InviteLink, CollaboratorRole } from '../types';
 import { config } from '../config';
+import { localeForLanguage } from '../i18n/language';
 
 // On native (Capacitor) the origin is localhost, so use the configured domain instead.
 const getInviteBaseUrl = (): string =>
@@ -15,6 +17,7 @@ interface CollaboratorManagerProps {
 }
 
 const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, eventName }) => {
+  const { t, i18n } = useTranslation('events');
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [inviteLinks, setInviteLinks] = useState<InviteLink[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,7 +96,7 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
       setError(null);
     } catch (err) {
       console.error('Failed to load collaborators:', err);
-      setError('Failed to load collaborators');
+      setError(t('collaboration.errors.load'));
     } finally {
       setLoading(false);
     }
@@ -117,11 +120,15 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
       setError(null);
       const newLink = await createInviteLink(eventSlug, inviteLinkRole);
       setInviteLinks([newLink, ...inviteLinks]);
-      setSuccess('Invite link created!');
+      setSuccess(t('collaboration.success.linkCreated'));
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
       console.error('Failed to create invite link:', err);
-      setError(err.response?.data?.error || 'Failed to create invite link');
+      setError(
+        err.response?.data?.code
+          ? t('collaboration.errors.createLink')
+          : (err.response?.data?.error || t('collaboration.errors.createLink')),
+      );
     } finally {
       setCreatingLink(false);
     }
@@ -135,18 +142,18 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
   };
 
   const handleRevokeLink = async (token: string) => {
-    if (!confirm('Revoke this invite link? It will no longer work.')) {
+    if (!confirm(t('collaboration.inviteLinks.revokeConfirm'))) {
       return;
     }
 
     try {
       await revokeInviteLink(eventSlug, token);
       setInviteLinks(inviteLinks.filter(link => link.token !== token));
-      setSuccess('Invite link revoked');
+      setSuccess(t('collaboration.success.linkRevoked'));
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error('Failed to revoke invite link:', err);
-      setError('Failed to revoke invite link');
+      setError(t('collaboration.errors.revokeLink'));
     }
   };
 
@@ -156,7 +163,7 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
     console.log('[CollaboratorManager] Starting invite for:', inviteEmail);
     
     if (!inviteEmail || !inviteEmail.includes('@')) {
-      setError('Please enter a valid email address');
+      setError(t('collaboration.errors.invalidEmail'));
       return;
     }
 
@@ -169,7 +176,7 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
       const result = await inviteCollaborator(eventSlug, inviteEmail, inviteRole);
       console.log('[CollaboratorManager] Invite successful:', result);
       
-      setSuccess(`Invitation sent to ${inviteEmail}`);
+      setSuccess(t('collaboration.success.invitationSent', { email: inviteEmail }));
       setInviteEmail('');
       
       // Reload collaborators list
@@ -186,25 +193,29 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
         status: err.response?.status,
         data: err.response?.data
       });
-      setError(err.response?.data?.error || err.message || 'Failed to send invitation');
+      setError(
+        err.response?.data?.code
+          ? t('collaboration.errors.invite')
+          : (err.response?.data?.error || err.message || t('collaboration.errors.invite')),
+      );
     } finally {
       setInviting(false);
     }
   };
 
   const handleRemove = async (email: string) => {
-    if (!confirm(`Remove ${email} as a collaborator? They will no longer be able to upload photos to this event.`)) {
+    if (!confirm(t('collaboration.list.removeConfirm', { email }))) {
       return;
     }
 
     try {
       await removeCollaborator(eventSlug, email);
-      setSuccess(`Removed ${email} from collaborators`);
+      setSuccess(t('collaboration.success.removed', { email }));
       await loadCollaborators();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error('Failed to remove collaborator:', err);
-      setError('Failed to remove collaborator');
+      setError(t('collaboration.errors.remove'));
     }
   };
 
@@ -213,11 +224,14 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
       setUpdatingRoleEmail(email);
       await updateCollaboratorRole(eventSlug, email, role);
       await loadCollaborators();
-      setSuccess(`Updated ${email} to ${role}`);
+      setSuccess(t('collaboration.success.roleUpdated', {
+        email,
+        role: t(`collaboration.roles.${role}`),
+      }));
       setTimeout(() => setSuccess(null), 2500);
     } catch (err) {
       console.error('Failed to update role:', err);
-      setError('Failed to update role');
+      setError(t('collaboration.errors.updateRole'));
     } finally {
       setUpdatingRoleEmail(null);
     }
@@ -239,16 +253,16 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Manage Collaborators</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('collaboration.manageTitle')}</h2>
         <p className="text-gray-600 dark:text-gray-400 text-sm">
-          Invite users to upload photos and videos to "{eventName}"
+          {t('collaboration.inviteDescription', { eventName })}
 </p>
       </div>
 
       {/* Invite Form */}
       <div className="mb-6">
         <label htmlFor="invite-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Invite by Email
+          {t('collaboration.inviteByEmail')}
         </label>
         <div className="flex gap-2">
           <div className="flex-1 relative" ref={suggestionsRef}>
@@ -271,7 +285,7 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
                   setShowSuggestions(true);
                 }
               }}
-              placeholder="collaborator@example.com"
+              placeholder={t('collaboration.emailPlaceholder')}
               className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               disabled={inviting}
               autoComplete="off"
@@ -305,10 +319,10 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             disabled={inviting}
           >
-            <option value="viewer">Viewer</option>
-            <option value="uploader">Uploader</option>
-            <option value="editor">Editor</option>
-            <option value="admin">Admin</option>
+            <option value="viewer">{t('collaboration.roles.viewer')}</option>
+            <option value="uploader">{t('collaboration.roles.uploader')}</option>
+            <option value="editor">{t('collaboration.roles.editor')}</option>
+            <option value="admin">{t('collaboration.roles.admin')}</option>
           </select>
           <button
             type="button"
@@ -317,7 +331,7 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <UserPlus className="w-4 h-4" />
-            {inviting ? 'Sending...' : 'Invite'}
+            {inviting ? t('collaboration.sending') : t('collaboration.invite')}
           </button>
         </div>
       </div>
@@ -339,8 +353,8 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
       <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Invite Links</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Create shareable links for collaboration</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('collaboration.inviteLinks.title')}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{t('collaboration.inviteLinks.description')}</p>
           </div>
           <button
             type="button"
@@ -349,21 +363,21 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
           >
             <LinkIcon className="w-4 h-4" />
-            {creatingLink ? 'Creating...' : 'Create Link'}
+            {creatingLink ? t('collaboration.inviteLinks.creating') : t('collaboration.inviteLinks.create')}
           </button>
         </div>
         <div className="mb-3">
-          <label className="text-xs text-gray-600 dark:text-gray-400 mr-2">Invite link role</label>
+          <label className="text-xs text-gray-600 dark:text-gray-400 mr-2">{t('collaboration.inviteLinks.role')}</label>
           <select
             value={inviteLinkRole}
             onChange={(e) => setInviteLinkRole(e.target.value as CollaboratorRole)}
             className="px-2.5 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             disabled={creatingLink}
           >
-            <option value="viewer">Viewer</option>
-            <option value="uploader">Uploader</option>
-            <option value="editor">Editor</option>
-            <option value="admin">Admin</option>
+            <option value="viewer">{t('collaboration.roles.viewer')}</option>
+            <option value="uploader">{t('collaboration.roles.uploader')}</option>
+            <option value="editor">{t('collaboration.roles.editor')}</option>
+            <option value="admin">{t('collaboration.roles.admin')}</option>
           </select>
         </div>
 
@@ -374,8 +388,8 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
         ) : inviteLinks.length === 0 ? (
           <div className="text-center py-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
             <LinkIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-            <p className="text-gray-600 dark:text-gray-400 text-sm">No active invite links</p>
-            <p className="text-gray-500 dark:text-gray-500 text-xs mt-1">Create a link to share with collaborators</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">{t('collaboration.inviteLinks.empty')}</p>
+            <p className="text-gray-500 dark:text-gray-500 text-xs mt-1">{t('collaboration.inviteLinks.emptyHint')}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -392,13 +406,21 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
                     </code>
                   </div>
                     <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                    <span>Created {new Date(link.created_at).toLocaleDateString()}</span>
-                    <span className="capitalize">Role: {link.role}</span>
+                    <span>
+                      {t('collaboration.inviteLinks.created', {
+                        date: new Date(link.created_at).toLocaleDateString(localeForLanguage(i18n.resolvedLanguage)),
+                      })}
+                    </span>
+                    <span>{t('collaboration.inviteLinks.roleValue', { role: t(`collaboration.roles.${link.role}`) })}</span>
                     {link.use_count > 0 && (
-                      <span className="text-green-600">Used {link.use_count}x</span>
+                      <span className="text-green-600">{t('collaboration.inviteLinks.used', { count: link.use_count })}</span>
                     )}
                     {link.last_used_at && (
-                      <span>Last used {new Date(link.last_used_at).toLocaleDateString()}</span>
+                      <span>
+                        {t('collaboration.inviteLinks.lastUsed', {
+                          date: new Date(link.last_used_at).toLocaleDateString(localeForLanguage(i18n.resolvedLanguage)),
+                        })}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -407,7 +429,7 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
                     type="button"
                     onClick={() => handleCopyLink(link.token)}
                     className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                    title="Copy link"
+                    title={t('collaboration.inviteLinks.copy')}
                   >
                     {copiedToken === link.token ? (
                       <Check className="w-4 h-4" />
@@ -419,7 +441,7 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
                     type="button"
                     onClick={() => handleRevokeLink(link.token)}
                     className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                    title="Revoke link"
+                    title={t('collaboration.inviteLinks.revoke')}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -434,18 +456,18 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
       {loading ? (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
-          <p className="mt-2 text-gray-600 dark:text-gray-400 text-sm">Loading collaborators...</p>
+          <p className="mt-2 text-gray-600 dark:text-gray-400 text-sm">{t('collaboration.list.loading')}</p>
         </div>
       ) : collaborators.length === 0 ? (
         <div className="text-center py-8 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
           <UserPlus className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-          <p className="text-gray-600 dark:text-gray-400 text-sm">No collaborators yet</p>
-          <p className="text-gray-500 dark:text-gray-500 text-xs mt-1">Invite users via email to get started</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">{t('collaboration.list.empty')}</p>
+          <p className="text-gray-500 dark:text-gray-500 text-xs mt-1">{t('collaboration.list.emptyHint')}</p>
         </div>
       ) : (
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-            Collaborators ({collaborators.length})
+            {t('collaboration.list.title', { count: collaborators.length })}
           </h3>
           {collaborators.map((collaborator) => (
             <div
@@ -458,14 +480,16 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
                     {collaborator.name || collaborator.email}
                   </p>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium border capitalize ${getRoleBadgeColor(collaborator.role)}`}>
-                    {collaborator.role}
+                    {t(`collaboration.roles.${collaborator.role}`)}
                   </span>
                 </div>
                 {collaborator.name && (
                   <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{collaborator.email}</p>
                 )}
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                  Invited {new Date(collaborator.invited_at).toLocaleDateString()}
+                  {t('collaboration.list.invited', {
+                    date: new Date(collaborator.invited_at).toLocaleDateString(localeForLanguage(i18n.resolvedLanguage)),
+                  })}
                 </p>
               </div>
               <select
@@ -475,18 +499,18 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({ eventSlug, ev
                 }}
                 disabled={updatingRoleEmail === collaborator.email}
                 className="ml-3 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                title="Change role"
+                title={t('collaboration.list.changeRole')}
               >
-                <option value="viewer">Viewer</option>
-                <option value="uploader">Uploader</option>
-                <option value="editor">Editor</option>
-                <option value="admin">Admin</option>
+                <option value="viewer">{t('collaboration.roles.viewer')}</option>
+                <option value="uploader">{t('collaboration.roles.uploader')}</option>
+                <option value="editor">{t('collaboration.roles.editor')}</option>
+                <option value="admin">{t('collaboration.roles.admin')}</option>
               </select>
               <button
                 type="button"
                 onClick={() => handleRemove(collaborator.email)}
                 className="ml-3 p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                title="Remove collaborator"
+                title={t('collaboration.list.remove')}
               >
                 <X className="w-4 h-4" />
               </button>

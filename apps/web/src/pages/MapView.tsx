@@ -9,6 +9,7 @@ import SEO from '../components/SEO';
 import { getMapPhotos, type MapPhoto } from '../api';
 import { getAbsoluteUrl } from '../utils/urlUtils';
 import { getConfig } from '../config';
+import { useTranslation } from 'react-i18next';
 
 // Fix for default marker icon
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -73,6 +74,7 @@ const MapBounds: React.FC<{ locations: LocationGroup[] }> = ({ locations }) => {
 };
 
 const MapView: React.FC = () => {
+  const { t } = useTranslation('photos');
   const [locations, setLocations] = useState<LocationGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -109,7 +111,7 @@ const MapView: React.FC = () => {
       setLocations(Array.from(locationMap.values()));
       setError(null);
     } catch (err) {
-      setError('Failed to load photo locations');
+      setError(t('map.loadFailed'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -131,7 +133,7 @@ const MapView: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       <SEO
-        title={`Photo Map - ${config.appName} | Browse by Location`}
+        title={`${t('map.title')} - ${config.appName} | ${t('map.browseByLocation')}`}
         description="Explore photos on an interactive map. Browse event photography by location, including ice skating and inline skating events across different cities."
         keywords="photo map, event locations, ice skating locations, inline skating locations, GPS photos, photography map"
         url={`${window.location.origin}/map`}
@@ -141,10 +143,10 @@ const MapView: React.FC = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              📍 Photo Map
+              📍 {t('map.title')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              {locations.length} location{locations.length !== 1 ? 's' : ''} with GPS coordinates
+              {t('map.locationCount', { count: locations.length })}
             </p>
           </div>
         </div>
@@ -152,7 +154,7 @@ const MapView: React.FC = () => {
         {loading && (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading photo locations...</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">{t('map.loading')}</p>
           </div>
         )}
 
@@ -164,7 +166,7 @@ const MapView: React.FC = () => {
 
         {!loading && !error && locations.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400">No photos with GPS coordinates found.</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('map.empty')}</p>
           </div>
         )}
 
@@ -196,7 +198,7 @@ const MapView: React.FC = () => {
                     const eventKey = photo.event_slug || 'unknown';
                     if (!acc[eventKey]) {
                       acc[eventKey] = {
-                        name: photo.event_name || 'Unknown Event',
+                        name: photo.event_name || t('map.unknownEvent'),
                         slug: photo.event_slug || '',
                         photos: []
                       };
@@ -219,7 +221,7 @@ const MapView: React.FC = () => {
                             {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
                           </h3>
                           <p className="text-sm text-gray-600 mb-3">
-                            {location.photos.length} photo{location.photos.length !== 1 ? 's' : ''} from {events.length} event{events.length !== 1 ? 's' : ''}
+                            {t('map.popupSummary', { photoCount: location.photos.length, eventCount: events.length })}
                           </p>
                           
                           {/* Show events and their photos */}

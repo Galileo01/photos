@@ -15,6 +15,9 @@ export interface Env {
   EVENT_COOKIE_SECRET: string;
   ADMIN_SHARED_SECRET?: string;
   ADMIN_EMAILS?: string; // Comma-separated list of admin emails
+  PRIVATE_GALLERY?: string;
+  ACCESS_TEAM_DOMAIN?: string;
+  ACCESS_AUD?: string;
   MAILGUN_API_KEY?: string; // Optional: Mailgun API key for sending email notifications
   MAILGUN_DOMAIN?: string; // Optional: Mailgun domain for sending emails
   ENVIRONMENT?: string;

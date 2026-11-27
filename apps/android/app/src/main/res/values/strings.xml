@@ -4,6 +4,36 @@
     <string name="title_activity_main">Photos</string>
     <string name="package_name">nl.thijsvtol.photos</string>
     <string name="custom_url_scheme">nl.thijsvtol.photos</string>
+    <string name="upload_channel_name">Upload Progress</string>
+    <string name="upload_channel_description">Shows progress of photo uploads</string>
+    <string name="upload_stop">Stop</string>
+    <string name="upload_cancel">Cancel uploads</string>
+    <string name="upload_in_progress">Upload in progress</string>
+    <string name="sync_uploading_title">Uploading photos to your library</string>
+    <string name="sync_checking_folders">Checking folders for new photos…</string>
+    <string name="sync_photo_progress">Photo %1$d of %2$d</string>
+    <string name="sync_uploaded_title">✓ Photos uploaded</string>
+    <string name="sync_partial_failure_title">Some photos couldn’t be uploaded</string>
+    <string name="sync_failure_title">Photos couldn’t be uploaded</string>
+    <string name="sync_skipped_suffix"> — open the app to see why and retry.</string>
+    <string name="sync_sign_in_title">Sign in to continue syncing</string>
+    <string name="sync_sign_in_body">Your session expired, so folder sync is paused. Open the app to sign in again.</string>
+    <plurals name="sync_new_files">
+        <item quantity="one">Checking %d new file…</item>
+        <item quantity="other">Checking %d new files…</item>
+    </plurals>
+    <plurals name="sync_uploaded_count">
+        <item quantity="one">%d photo uploaded</item>
+        <item quantity="other">%d photos uploaded</item>
+    </plurals>
+    <plurals name="sync_already_synced_count">
+        <item quantity="one">%d already synced</item>
+        <item quantity="other">%d already synced</item>
+    </plurals>
+    <plurals name="sync_skipped_count">
+        <item quantity="one">%d file was skipped after repeated failures</item>
+        <item quantity="other">%d files were skipped after repeated failures</item>
+    </plurals>
     <!-- Google Cast custom receiver Application ID. Register a custom
          receiver at https://cast.google.com/publish pointing to
          https://<domain>/cast-receiver (see pages/CastReceiver.tsx) to

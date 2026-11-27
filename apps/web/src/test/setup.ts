@@ -2,6 +2,7 @@ import '@testing-library/jest-dom';
 import { expect, afterEach, beforeEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
+import i18n from '../i18n';
 
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers);
@@ -30,8 +31,9 @@ Object.defineProperty(window, 'localStorage', {
 });
 
 // Reset localStorage before each test
-beforeEach(() => {
+beforeEach(async () => {
   localStorageMock.clear();
+  await i18n.changeLanguage('en');
 });
 
 // Cleanup after each test

@@ -1,4 +1,5 @@
 import { useForm, ValidationError } from '@formspree/react';
+import { useTranslation } from 'react-i18next';
 
 interface ContactFormProps {
   formId: string;
@@ -6,6 +7,7 @@ interface ContactFormProps {
 
 export default function ContactForm({ formId }: ContactFormProps) {
   const [state, handleSubmit] = useForm(formId);
+  const { t } = useTranslation('common');
 
   return (
     <form
@@ -14,14 +16,14 @@ export default function ContactForm({ formId }: ContactFormProps) {
     >
       {state.succeeded ? (
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300 px-4 py-3 rounded-lg text-center">
-          <p className="font-medium">Thanks for your message!</p>
-          <p className="text-sm mt-1">I'll get back to you soon.</p>
+          <p className="font-medium">{t('contact.thanks')}</p>
+          <p className="text-sm mt-1">{t('contact.replySoon')}</p>
         </div>
       ) : (
         <>
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Name
+              {t('contact.name')}
             </label>
             <input
               type="text"
@@ -32,7 +34,7 @@ export default function ContactForm({ formId }: ContactFormProps) {
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <ValidationError 
-              prefix="Name" 
+              prefix={t('contact.name')}
               field="name"
               errors={state.errors}
               className="text-red-600 text-sm mt-1"
@@ -41,7 +43,7 @@ export default function ContactForm({ formId }: ContactFormProps) {
           
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Email
+              {t('contact.email')}
             </label>
             <input
               type="email"
@@ -52,7 +54,7 @@ export default function ContactForm({ formId }: ContactFormProps) {
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <ValidationError 
-              prefix="Email" 
+              prefix={t('contact.email')}
               field="email"
               errors={state.errors}
               className="text-red-600 text-sm mt-1"
@@ -61,7 +63,7 @@ export default function ContactForm({ formId }: ContactFormProps) {
           
           <div>
             <label htmlFor="message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Message
+              {t('contact.message')}
             </label>
             <textarea
               id="message"
@@ -72,7 +74,7 @@ export default function ContactForm({ formId }: ContactFormProps) {
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <ValidationError 
-              prefix="Message" 
+              prefix={t('contact.message')}
               field="message"
               errors={state.errors}
               className="text-red-600 text-sm mt-1"
@@ -84,7 +86,7 @@ export default function ContactForm({ formId }: ContactFormProps) {
             disabled={state.submitting}
             className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {state.submitting ? 'Sending...' : 'Send Message'}
+            {state.submitting ? t('states.sending') : t('contact.send')}
           </button>
         </>
       )}

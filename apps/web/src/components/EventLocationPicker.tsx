@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MapPin, X } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import { Icon } from 'leaflet';
@@ -48,6 +49,7 @@ const InvalidateSizeOnMount: React.FC = () => {
 };
 
 export default function EventLocationPicker({ isOpen, onClose, onSetLocation }: EventLocationPickerProps) {
+  const { t } = useTranslation(['events', 'common']);
   const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(null);
 
   // Map click handler component
@@ -76,24 +78,24 @@ export default function EventLocationPicker({ isOpen, onClose, onSetLocation }: 
   if (!isOpen) return null;
 
   return (
-    <ModalOverlay onClose={handleClose} label="Set GPS location for event">
+    <ModalOverlay onClose={handleClose} label={t('events:locationPicker.modalLabel')}>
     <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] h-[600px] flex flex-col shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
         <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-start gap-4">
           <div className="flex-1">
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <MapPin className="w-5 h-5" />
-              <span>Set GPS Location for Event</span>
+              <span>{t('events:locationPicker.title')}</span>
             </h2>
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Click on the map to select a location. This will update photos without GPS data.
+              {t('events:locationPicker.description')}
             </p>
           </div>
           <button
             type="button"
             onClick={handleClose} 
             className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition"
-            aria-label="Close modal"
+            aria-label={t('common:actions.close')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -117,10 +119,13 @@ export default function EventLocationPicker({ isOpen, onClose, onSetLocation }: 
             {selectedLocation ? (
               <>
                 <MapPin className="w-4 h-4 text-green-600 dark:text-green-400" />
-                <span>Selected: {selectedLocation[0].toFixed(6)}, {selectedLocation[1].toFixed(6)}</span>
+                <span>{t('events:locationPicker.selected', {
+                  latitude: selectedLocation[0].toFixed(6),
+                  longitude: selectedLocation[1].toFixed(6),
+                })}</span>
               </>
             ) : (
-              <span>Click on the map to select a location</span>
+              <span>{t('events:locationPicker.hint')}</span>
             )}
           </div>
           <div className="flex gap-2">
@@ -129,7 +134,7 @@ export default function EventLocationPicker({ isOpen, onClose, onSetLocation }: 
               onClick={handleClose}
               className="flex-1 sm:flex-none px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition text-sm sm:text-base"
             >
-              Cancel
+              {t('common:actions.cancel')}
             </button>
             <button
               type="button"
@@ -138,7 +143,7 @@ export default function EventLocationPicker({ isOpen, onClose, onSetLocation }: 
               className="flex-1 sm:flex-none px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 text-sm sm:text-base"
             >
               <MapPin className="w-4 h-4" />
-              <span>Set Location</span>
+              <span>{t('events:locationPicker.setLocation')}</span>
             </button>
           </div>
         </div>

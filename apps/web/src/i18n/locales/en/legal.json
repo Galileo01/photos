@@ -1,0 +1,10 @@
+{
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: {{date}}"
+  },
+  "usage": {
+    "title": "Photo Usage Rights",
+    "lastUpdated": "Last updated: {{date}}"
+  }
+}

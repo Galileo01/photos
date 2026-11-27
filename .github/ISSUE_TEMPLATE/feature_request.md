@@ -7,6 +7,8 @@ assignees: ''
 
 ---
 
+**English** | [简体中文](feature_request.zh.md)
+
 ## Feature Description
 A clear and concise description of the feature you'd like to see added.
 

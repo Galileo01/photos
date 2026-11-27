@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Navbar from '../components/Navbar';
 import { getTags, createTag, updateTag, deleteTag } from '../api';
 import type { Tag, UpdateTagRequest } from '../types';
 
 const AdminTagManager: React.FC = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +36,7 @@ const AdminTagManager: React.FC = () => {
       setTags(data);
       setError(null);
     } catch (err) {
-      setError('Failed to load tags');
+      setError(t('admin:tagManagerPage.errors.load'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -45,7 +47,7 @@ const AdminTagManager: React.FC = () => {
     e.preventDefault();
     
     if (!newTagName) {
-      setError('Tag name is required');
+      setError(t('admin:tagManagerPage.errors.nameRequired'));
       return;
     }
 
@@ -55,7 +57,7 @@ const AdminTagManager: React.FC = () => {
         slug: newTagSlug || undefined,
       });
       
-      setSuccess('Tag created successfully!');
+      setSuccess(t('admin:tagManagerPage.success.created'));
       setShowCreateModal(false);
       setNewTagName('');
       setNewTagSlug('');
@@ -63,7 +65,7 @@ const AdminTagManager: React.FC = () => {
       
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError('Failed to create tag');
+      setError(t('admin:tagManagerPage.errors.create'));
       console.error(err);
     }
   };
@@ -91,13 +93,13 @@ const AdminTagManager: React.FC = () => {
 
       await updateTag(editingTag.id, updates);
       
-      setSuccess('Tag updated successfully!');
+      setSuccess(t('admin:tagManagerPage.success.updated'));
       setEditingTag(null);
       await loadTags();
       
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError('Failed to update tag');
+      setError(t('admin:tagManagerPage.errors.update'));
       console.error(err);
     }
   };
@@ -108,13 +110,13 @@ const AdminTagManager: React.FC = () => {
     try {
       await deleteTag(deletingTag.id);
       
-      setSuccess('Tag deleted successfully!');
+      setSuccess(t('admin:tagManagerPage.success.deleted'));
       setDeletingTag(null);
       await loadTags();
       
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError('Failed to delete tag');
+      setError(t('admin:tagManagerPage.errors.delete'));
       console.error(err);
     }
   };
@@ -125,18 +127,18 @@ const AdminTagManager: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <Link to="/admin" className="text-blue-600 hover:text-blue-700 mb-4 inline-block">
-            ← Back to Admin
+            {t('admin:tagManagerPage.back')}
           </Link>
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900">Tag Manager</h1>
-              <p className="text-gray-600 mt-2">Create and manage tags for organizing events</p>
+              <h1 className="text-4xl font-bold text-gray-900">{t('admin:tagManagerPage.title')}</h1>
+              <p className="text-gray-600 mt-2">{t('admin:tagManagerPage.subtitle')}</p>
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             >
-              + Create Tag
+              + {t('admin:tagManagerPage.create')}
             </button>
           </div>
         </div>
@@ -156,16 +158,16 @@ const AdminTagManager: React.FC = () => {
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-            <p className="mt-4 text-gray-600">Loading tags...</p>
+            <p className="mt-4 text-gray-600">{t('admin:tagManagerPage.loading')}</p>
           </div>
         ) : tags.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow">
-            <p className="text-gray-600 mb-4">No tags created yet</p>
+            <p className="text-gray-600 mb-4">{t('admin:tagManagerPage.empty')}</p>
             <button
               onClick={() => setShowCreateModal(true)}
               className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             >
-              Create Your First Tag
+              {t('admin:tagManagerPage.createFirst')}
             </button>
           </div>
         ) : (
@@ -174,13 +176,13 @@ const AdminTagManager: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
+                    {t('admin:tagManagerPage.name')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Slug
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    {t('admin:tagManagerPage.actions')}
                   </th>
                 </tr>
               </thead>
@@ -200,13 +202,13 @@ const AdminTagManager: React.FC = () => {
                         onClick={() => openEditModal(tag)}
                         className="text-blue-600 hover:text-blue-900 mr-4"
                       >
-                        Edit
+                        {t('common:actions.edit')}
                       </button>
                       <button
                         onClick={() => setDeletingTag(tag)}
                         className="text-red-600 hover:text-red-900"
                       >
-                        Delete
+                        {t('common:actions.delete')}
                       </button>
                     </td>
                   </tr>
@@ -221,18 +223,18 @@ const AdminTagManager: React.FC = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
               <div className="p-6">
-                <h2 className="text-2xl font-bold mb-4">Create New Tag</h2>
+                <h2 className="text-2xl font-bold mb-4">{t('admin:tagManagerPage.createTitle')}</h2>
                 <form onSubmit={handleCreateTag}>
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Tag Name *
+                        {t('admin:tagManagerPage.name')} *
                       </label>
                       <input
                         type="text"
                         value={newTagName}
                         onChange={(e) => setNewTagName(e.target.value)}
-                        placeholder="e.g., Nature"
+                        placeholder={t('admin:tagManagerPage.namePlaceholder')}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                         required
                       />
@@ -240,17 +242,17 @@ const AdminTagManager: React.FC = () => {
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Slug (optional)
+                        {t('admin:tagManagerPage.slugOptional')}
                       </label>
                       <input
                         type="text"
                         value={newTagSlug}
                         onChange={(e) => setNewTagSlug(e.target.value)}
-                        placeholder="Auto-generated from name"
+                        placeholder={t('admin:tagManagerPage.slugPlaceholder')}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                       />
                       <p className="text-xs text-gray-500 mt-1">
-                        Used in URLs. Leave empty to auto-generate.
+                        {t('admin:tagManagerPage.slugHint')}
                       </p>
                     </div>
                   </div>
@@ -260,14 +262,14 @@ const AdminTagManager: React.FC = () => {
                       type="submit"
                       className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
                     >
-                      Create Tag
+                      {t('admin:tagManagerPage.create')}
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowCreateModal(false)}
                       className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
                     >
-                      Cancel
+                      {t('common:actions.cancel')}
                     </button>
                   </div>
                 </form>
@@ -281,12 +283,12 @@ const AdminTagManager: React.FC = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
               <div className="p-6">
-                <h2 className="text-2xl font-bold mb-4">Edit Tag</h2>
+                <h2 className="text-2xl font-bold mb-4">{t('admin:tagManagerPage.editTitle')}</h2>
                 <form onSubmit={handleUpdateTag}>
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Tag Name
+                        {t('admin:tagManagerPage.name')}
                       </label>
                       <input
                         type="text"
@@ -316,14 +318,14 @@ const AdminTagManager: React.FC = () => {
                       type="submit"
                       className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
                     >
-                      Save Changes
+                      {t('admin:tagManagerPage.saveChanges')}
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingTag(null)}
                       className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
                     >
-                      Cancel
+                      {t('common:actions.cancel')}
                     </button>
                   </div>
                 </form>
@@ -337,22 +339,24 @@ const AdminTagManager: React.FC = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
               <div className="p-6">
-                <h2 className="text-2xl font-bold mb-4 text-red-600">⚠️ Delete Tag</h2>
+                <h2 className="text-2xl font-bold mb-4 text-red-600">⚠️ {t('admin:tagManagerPage.deleteTitle')}</h2>
                 <p className="mb-4 text-gray-700">
-                  Delete tag <strong>{deletingTag.name}</strong>? This will remove it from all events.
+                  {t('admin:tagManagerPage.deleteBefore')}{' '}
+                  <strong>{deletingTag.name}</strong>
+                  {t('admin:tagManagerPage.deleteAfter')}
                 </p>
                 <div className="flex gap-3">
                   <button
                     onClick={handleDeleteTag}
                     className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                   >
-                    Delete Tag
+                    {t('admin:tagManagerPage.deleteTitle')}
                   </button>
                   <button
                     onClick={() => setDeletingTag(null)}
                     className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
                   >
-                    Cancel
+                    {t('common:actions.cancel')}
                   </button>
                 </div>
               </div>

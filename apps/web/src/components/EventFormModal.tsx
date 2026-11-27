@@ -12,6 +12,7 @@ import type { Event, UpdateEventRequest } from '../types';
 import { useToast } from './Toast';
 import { useConfirm } from './ConfirmDialog';
 import { haptics } from '../utils/haptics';
+import { useTranslation } from 'react-i18next';
 
 interface EventFormModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ interface EventFormModalProps {
 const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event, onSuccess, onCreated }) => {
   const toast = useToast();
   const { confirm, ConfirmDialog } = useConfirm();
+  const { t } = useTranslation(['events', 'common']);
   const isEdit = !!event;
 
   // Form state
@@ -89,7 +91,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
     }
 
     if (!name.trim()) {
-      toast.showError('Name is required');
+      toast.showError(t('events:form.nameRequired'));
       return;
     }
 
@@ -110,7 +112,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
         if (Object.keys(updates).length > 0) await updateEvent(event.slug, updates);
 
         await haptics.success();
-        toast.showSuccess('Event updated');
+        toast.showSuccess(t('events:form.updated'));
       } else {
         // Create event
         const newEvent = await createEvent({
@@ -123,7 +125,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
           await setEventTags(newEvent.slug, tagIds);
         }
         await haptics.success();
-        toast.showSuccess('Event created');
+        toast.showSuccess(t('events:form.created'));
         onCreated?.(newEvent.slug);
       }
 
@@ -131,7 +133,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
       onClose();
     } catch (err) {
       console.error('Failed to save event:', err);
-      toast.showError(isEdit ? 'Failed to update event' : 'Failed to create event');
+      toast.showError(isEdit ? t('events:form.updateFailed') : t('events:form.createFailed'));
     } finally {
       setSaving(false);
     }
@@ -144,12 +146,12 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
     try {
       const result = await deleteEvent(event.slug);
       await haptics.success();
-      toast.showSuccess(`Event deleted. Removed ${result.deletedPhotos} photos.`);
+      toast.showSuccess(t('events:form.deleted', { count: result.deletedPhotos }));
       onSuccess();
       onClose();
     } catch (err) {
       console.error('Failed to delete event:', err);
-      toast.showError('Failed to delete event');
+      toast.showError(t('events:form.deleteFailed'));
     } finally {
       setDeleting(false);
     }
@@ -160,10 +162,10 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
     try {
       const result = await setEventLocation(event.slug, lat, lng);
       await haptics.success();
-      toast.showSuccess(`Set GPS location for ${result.updated_count} photos`);
+      toast.showSuccess(t('events:form.locationSet', { count: result.updated_count }));
       setShowLocationPicker(false);
     } catch {
-      toast.showError('Failed to set event location');
+      toast.showError(t('events:form.locationFailed'));
     }
   };
 
@@ -173,9 +175,9 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
     try {
       const result = await regenerateThumbnails(event.slug);
       await haptics.success();
-      toast.showSuccess(`Regenerating thumbnails for ${result.count} photos`);
+      toast.showSuccess(t('events:form.regenerateStarted', { count: result.count }));
     } catch {
-      toast.showError('Failed to regenerate thumbnails');
+      toast.showError(t('events:form.regenerateFailed'));
     } finally {
       setIsRegenerating(false);
     }
@@ -183,19 +185,19 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
 
   const handleGeocode = async () => {
     if (!event) return;
-    const confirmed = await confirm('Geocode Photos', 'This will fetch city names for all photos with GPS coordinates. Continue?');
+    const confirmed = await confirm(t('events:form.geocodeTitle'), t('events:form.geocodeConfirm'));
     if (!confirmed) return;
     setIsGeocoding(true);
     try {
       const result = await geocodeEventPhotos(event.slug);
       if (result.updated === 0) {
-        toast.showInfo('All photos with GPS already have city names');
+        toast.showInfo(t('events:form.allGeocoded'));
       } else {
         await haptics.success();
-        toast.showSuccess(`Geocoded ${result.updated} of ${result.total} photos`);
+        toast.showSuccess(t('events:form.geocodeComplete', { updated: result.updated, total: result.total }));
       }
     } catch {
-      toast.showError('Failed to geocode photos');
+      toast.showError(t('events:form.geocodeFailed'));
     } finally {
       setIsGeocoding(false);
     }
@@ -206,7 +208,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
   return (
     <>
       {ConfirmDialog}
-      <ModalOverlay onClose={onClose} label={isEdit ? 'Edit event' : 'Create new album'}>
+      <ModalOverlay onClose={onClose} label={isEdit ? t('events:form.modalEdit') : t('events:form.modalCreate')}>
       <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
         <div
           className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto overscroll-contain animate-in zoom-in-95 fade-in duration-200"
@@ -215,9 +217,9 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10 rounded-t-2xl">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {isEdit ? 'Event Settings' : 'New Album'}
+              {isEdit ? t('events:settings') : t('events:create')}
             </h2>
-            <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+            <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition" aria-label={t('common:actions.close')}>
               <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             </button>
           </div>
@@ -225,12 +227,12 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
           <form onSubmit={handleSubmit} className="p-6 space-y-5">
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('events:form.name')}</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Wedding 2024"
+                placeholder={t('events:form.namePlaceholder')}
                 className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
                 autoFocus
@@ -239,11 +241,11 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('events:form.description')}</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional description..."
+                placeholder={t('events:form.descriptionPlaceholder')}
                 className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows={2}
               />
@@ -251,15 +253,15 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
 
             {/* Visibility */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Visibility</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('events:form.visibility')}</label>
               <select
                 value={visibility}
                 onChange={(e) => setVisibility(e.target.value as 'public' | 'private' | 'collaborators_only')}
                 className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="public">Everyone (Public)</option>
-                <option value="collaborators_only">Only Collaborators</option>
-                <option value="private">Only Me (Private)</option>
+                <option value="public">{t('events:form.everyone')}</option>
+                <option value="collaborators_only">{t('events:form.onlyCollaborators')}</option>
+                <option value="private">{t('events:form.onlyMe')}</option>
               </select>
             </div>
 
@@ -273,7 +275,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
                     onChange={(e) => setChangePassword(e.target.checked)}
                     className="rounded"
                   />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Change Password</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('events:form.changePassword')}</span>
                 </label>
                 {changePassword && (
                   <div>
@@ -281,21 +283,21 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="New password (leave empty to remove)"
+                      placeholder={t('events:form.newPassword')}
                       className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty to remove password protection</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('events:form.removePasswordHint')}</p>
                   </div>
                 )}
               </div>
             ) : (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password (optional)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('events:form.optionalPassword')}</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Leave empty for no password"
+                  placeholder={t('events:form.passwordPlaceholder')}
                   className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
@@ -337,7 +339,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
             {/* Admin tools (edit mode only) */}
             {isEdit && event && (
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Tools</h3>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{t('events:form.tools')}</h3>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -345,7 +347,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
                     className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm flex items-center gap-2"
                   >
                     <MapPin className="w-4 h-4" />
-                    Set GPS
+                    {t('events:form.setGps')}
                   </button>
                   <button
                     type="button"
@@ -354,7 +356,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
                     className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:bg-gray-400 text-sm flex items-center gap-2"
                   >
                     {isRegenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                    {isRegenerating ? 'Regenerating...' : 'Regenerate Thumbnails'}
+                    {isRegenerating ? t('events:form.regenerating') : t('events:form.regenerate')}
                   </button>
                   <button
                     type="button"
@@ -363,7 +365,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
                     className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 text-sm flex items-center gap-2"
                   >
                     {isGeocoding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />}
-                    {isGeocoding ? 'Geocoding...' : 'Geocode Cities'}
+                    {isGeocoding ? t('events:form.geocoding') : t('events:form.geocode')}
                   </button>
                 </div>
               </div>
@@ -378,14 +380,14 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
                 className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 font-medium flex items-center justify-center gap-2"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                {isEdit ? 'Save Changes' : 'Create Album'}
+                {isEdit ? t('events:form.saveChanges') : t('events:create')}
               </button>
               <button
                 type="button"
                 onClick={onClose}
                 className="px-4 py-2.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition font-medium"
               >
-                Cancel
+                {t('common:actions.cancel')}
               </button>
             </div>
 
@@ -398,15 +400,15 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
                     onClick={() => setShowDelete(true)}
                     className="text-sm text-red-600 dark:text-red-400 hover:underline"
                   >
-                    Delete this event...
+                    {t('events:form.deleteEvent')}
                   </button>
                 ) : (
                   <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                     <p className="text-sm text-red-700 dark:text-red-300 mb-2">
-                      This will permanently delete <strong>{event.name}</strong> and all its photos.
+                      {t('events:form.deleteWarning', { name: event.name })}
                     </p>
                     <p className="text-xs text-red-600 dark:text-red-400 mb-2">
-                      Type <code className="bg-red-100 dark:bg-red-900/40 px-1.5 py-0.5 rounded">{event.slug}</code> to confirm:
+                      {t('events:form.deleteConfirm', { slug: event.slug })}
                     </p>
                     <input
                       type="text"
@@ -423,14 +425,14 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, event,
                         className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
                       >
                         {deleting && <Loader2 className="w-4 h-4 animate-spin" />}
-                        Delete Permanently
+                        {t('events:form.deletePermanently')}
                       </button>
                       <button
                         type="button"
                         onClick={() => { setShowDelete(false); setDeleteConfirmText(''); }}
                         className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition text-sm"
                       >
-                        Cancel
+                        {t('common:actions.cancel')}
                       </button>
                     </div>
                   </div>

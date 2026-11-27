@@ -1,5 +1,7 @@
 # Documentation Index
 
+**English** | [简体中文](README.zh.md)
+
 This directory contains all documentation for the Photo Sharing Application.
 
 ## Getting Started

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getTags } from '../api';
 import type { Tag } from '../types';
 
@@ -9,6 +10,7 @@ interface TagManagerProps {
 }
 
 const TagManager: React.FC<TagManagerProps> = ({ initialTags = [], onChange }) => {
+  const { t } = useTranslation('events');
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<Set<number>>(new Set());
 
@@ -47,7 +49,7 @@ const TagManager: React.FC<TagManagerProps> = ({ initialTags = [], onChange }) =
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">
-        Event Tags
+        {t('tags.label')}
       </label>
       
       {/* Tag selection */}
@@ -70,7 +72,7 @@ const TagManager: React.FC<TagManagerProps> = ({ initialTags = [], onChange }) =
       
       {allTags.length === 0 && (
         <p className="text-sm text-gray-500 mt-2">
-          No tags available. Create tags in the Tag Manager first.
+          {t('tags.empty')}
         </p>
       )}
     </div>

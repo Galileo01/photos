@@ -5,6 +5,8 @@ import { FilePicker } from '@capawesome/capacitor-file-picker';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { getUserCollaborations, updateUserProfile } from '../api';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher';
 
 interface Collaboration {
   event_id: number;
@@ -22,6 +24,7 @@ interface UserSettingsProps {
 const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
   const { user, updateUser } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { t, i18n } = useTranslation(['common', 'account']);
   const [name, setName] = useState(user?.name || '');
   const [collaborations, setCollaborations] = useState<Collaboration[]>([]);
   const [downloadPath, setDownloadPath] = useState<string>('');
@@ -34,11 +37,11 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
   const isNative = Capacitor.isNativePlatform();
 
   const commonPaths = [
-    { label: 'Downloads', value: '/storage/emulated/0/Download' },
-    { label: 'Documents', value: '/storage/emulated/0/Documents' },
-    { label: 'Pictures', value: '/storage/emulated/0/Pictures' },
+    { label: t('account:downloadPaths.downloads'), value: '/storage/emulated/0/Download' },
+    { label: t('account:downloadPaths.documents'), value: '/storage/emulated/0/Documents' },
+    { label: t('account:downloadPaths.pictures'), value: '/storage/emulated/0/Pictures' },
     { label: 'DCIM', value: '/storage/emulated/0/DCIM' },
-    { label: 'Custom', value: 'custom' },
+    { label: t('account:downloadPaths.custom'), value: 'custom' },
   ];
 
   // Initialize/update name when modal opens or user.name changes
@@ -123,24 +126,24 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
     } catch (error) {
       console.error('Failed to pick folder:', error);
       if (error instanceof Error && !error.message?.includes('cancel')) {
-        alert('Failed to select folder: ' + error.message);
+        alert(t('account:download.folderSelectionFailed', { message: error.message }));
       }
     }
   };
 
   const handleSaveDownloadPath = () => {
     if (!downloadPath.trim()) {
-      alert('Path cannot be empty');
+      alert(t('account:download.pathRequired'));
       return;
     }
     
     localStorage.setItem('download_path', downloadPath.trim());
-    alert('Download location saved! This will be used for future downloads.');
+    alert(t('account:download.locationSaved'));
   };
 
   const handleSaveName = async () => {
     if (!name.trim()) {
-      alert('Name cannot be empty');
+      alert(t('account:profile.nameRequired'));
       return;
     }
 
@@ -151,10 +154,10 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
       console.log('[UserSettings] Received updated user from API:', updatedUser);
       // Update user in context directly instead of refetching
       updateUser(updatedUser);
-      alert('Name updated successfully!');
+      alert(t('account:profile.nameUpdated'));
     } catch (error) {
       console.error('Failed to update name:', error);
-      alert('Failed to update name. Please try again.');
+      alert(t('account:profile.nameUpdateFailed'));
     } finally {
       setSaving(false);
     }
@@ -183,9 +186,10 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">User Settings</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('account:settings.title')}</h2>
           <button
             onClick={onClose}
+            aria-label={t('actions.close')}
             className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -202,7 +206,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
             }`}
           >
-            Profile & Theme
+            {t('account:settings.profileAndTheme')}
           </button>
           <button
             onClick={() => setActiveTab('collaborations')}
@@ -212,7 +216,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
             }`}
           >
-            Collaborations
+            {t('account:settings.collaborations')}
           </button>
         </div>
 
@@ -223,7 +227,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
               {/* Theme Settings */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  Theme
+                  {t('account:settings.theme')}
                 </label>
                 <div className="flex gap-3">
                   <button
@@ -235,7 +239,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
                     }`}
                   >
                     <Sun className="w-5 h-5" />
-                    <span className="font-medium">Light</span>
+                    <span className="font-medium">{t('account:settings.themeLight')}</span>
                   </button>
                   <button
                     onClick={() => setTheme('dark')}
@@ -246,7 +250,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
                     }`}
                   >
                     <Moon className="w-5 h-5" />
-                    <span className="font-medium">Dark</span>
+                    <span className="font-medium">{t('account:settings.themeDark')}</span>
                   </button>
                   <button
                     onClick={() => setTheme('system')}
@@ -257,15 +261,17 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
                     }`}
                   >
                     <Monitor className="w-5 h-5" />
-                    <span className="font-medium">System</span>
+                    <span className="font-medium">{t('account:settings.themeSystem')}</span>
                   </button>
                 </div>
               </div>
 
+              <LanguageSwitcher variant="settings" />
+
               {/* Name Settings */}
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Display Name
+                  {t('account:settings.displayName')}
                 </label>
                 <input
                   id="name"
@@ -273,21 +279,21 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="Enter your display name"
+                  placeholder={t('account:settings.displayNamePlaceholder')}
                 />
                 <button
                   onClick={handleSaveName}
                   disabled={!name.trim() || saving || name === user?.name}
                   className="mt-2 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                 >
-                  {saving ? 'Saving...' : 'Save Profile'}
+                  {saving ? t('states.saving') : t('account:settings.saveProfile')}
                 </button>
               </div>
 
               {/* Email (read-only) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Email
+                  {t('account:settings.email')}
                 </label>
                 <input
                   type="email"
@@ -301,13 +307,13 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
               {isNative && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    Download Location (Android)
+                    {t('account:settings.downloadLocation')}
                   </label>
 
                   {/* Path selection dropdown with Browse button */}
                   <div className="mb-3">
                     <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
-                      Select a folder
+                      {t('account:settings.selectFolder')}
                     </label>
                     <div className="flex gap-2">
                       <select
@@ -315,7 +321,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
                         onChange={(e) => handlePathOptionChange(e.target.value)}
                         className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       >
-                        <option value="">Choose a folder...</option>
+                        <option value="">{t('account:settings.chooseFolder')}</option>
                         {commonPaths.map((path) => (
                           <option key={path.value} value={path.value}>
                             {path.label}
@@ -327,7 +333,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
                         className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
                       >
                         <Folder className="w-4 h-4" />
-                        Browse
+                        {t('account:settings.browse')}
                       </button>
                     </div>
                   </div>
@@ -336,7 +342,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
                   {showCustomPath && (
                     <div className="mb-3">
                       <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
-                        Enter custom path
+                        {t('account:downloadPaths.enterCustomPath')}
                       </label>
                       <div className="relative">
                         <Folder className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -353,9 +359,9 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
 
                   {/* Current path display */}
                   <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Current download location:</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('account:downloadPaths.currentLocation')}</p>
                     <p className="text-sm font-mono text-gray-900 dark:text-white break-all">
-                      {downloadPath || 'Not set'}
+                      {downloadPath || t('account:downloadPaths.notSet')}
                     </p>
                   </div>
 
@@ -364,15 +370,15 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
                     disabled={!downloadPath.trim()}
                     className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                   >
-                    Save Download Location
+                    {t('account:settings.saveDownloadLocation')}
                   </button>
                   
                   <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                     <p className="text-xs text-blue-800 dark:text-blue-300 font-medium mb-1">
-                      📌 Tip:
+                      📌 {t('account:downloadPaths.tipTitle')}
                     </p>
                     <p className="text-xs text-blue-700 dark:text-blue-400">
-                      Use the Browse button to select any folder on your device, or manually enter a path.
+                      {t('account:downloadPaths.tipBody')}
                     </p>
                   </div>
                 </div>
@@ -385,17 +391,17 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
               <div className="flex items-center gap-2 mb-4">
                 <Users className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                  Events You Can Collaborate On
+                  {t('account:collaborations.title')}
                 </h3>
               </div>
 
               {loading ? (
                 <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  Loading collaborations...
+                  {t('account:collaborations.loading')}
                 </div>
               ) : collaborations.length === 0 ? (
                 <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  You don't have any collaborations yet.
+                  {t('account:collaborations.empty')}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -415,11 +421,13 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
                           <div className="flex items-center gap-4 mt-2">
                             {collab.can_upload && (
                               <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">
-                                Can Upload
+                                {t('account:collaborations.canUpload')}
                               </span>
                             )}
                             <span className="text-xs text-gray-500 dark:text-gray-400">
-                              Invited {new Date(collab.invited_at).toLocaleDateString()}
+                              {t('account:collaborations.invited', {
+                                date: new Intl.DateTimeFormat(i18n.resolvedLanguage).format(new Date(collab.invited_at)),
+                              })}
                             </span>
                           </div>
                         </div>
@@ -427,7 +435,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ isOpen, onClose }) => {
                           href={`/events/${collab.event_slug}`}
                           className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                         >
-                          View Event
+                          {t('account:collaborations.viewEvent')}
                         </a>
                       </div>
                     </div>

@@ -10,6 +10,7 @@ import { UploadProvider } from './contexts/UploadContext';
 import { PhotoNavigationProvider } from './contexts/PhotoNavigationContext';
 import GlobalUploadIndicator from './components/GlobalUploadIndicator';
 import RequireProfileName from './components/RequireProfileName';
+import DevelopmentModeBadge from './components/DevelopmentModeBadge';
 import { OfflineBanner } from './components/OfflineBanner';
 import { ToastProvider } from './components/Toast';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -18,6 +19,7 @@ import { initAnalytics, trackPageView } from './services/analytics';
 import { useAndroidBackButton } from './hooks/useAndroidBackButton';
 import { useStatusBar } from './hooks/useStatusBar';
 import { lazyWithReload } from './lazyWithReload';
+import { useTranslation } from 'react-i18next';
 
 // Lazy load route components for better code splitting — wrapped in lazyWithReload() so a
 // stale hashed-chunk 404 (after a new deploy replaces the file a user's already-open tab still
@@ -48,14 +50,18 @@ const AdminDuplicates = lazyWithReload(() => import('./pages/AdminDuplicates'));
 const AdminActivity = lazyWithReload(() => import('./pages/AdminActivity'));
 
 // Loading component
-const LoadingFallback = () => (
-  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-    <div className="text-center">
-      <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-      <p className="mt-4 text-gray-600">Loading...</p>
+const LoadingFallback = () => {
+  const { t } = useTranslation('common');
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+        <p className="mt-4 text-gray-600">{t('states.loading')}</p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Share intent handler component
 const ShareIntentHandler = () => {
@@ -163,7 +169,6 @@ const ShareIntentHandler = () => {
     } catch (err) {
       console.debug('[ShareIntentHandler] App deep-link handoff attempt failed, continuing on web:', err);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   // Check native plugin for buffered share data after component mounts
@@ -318,6 +323,7 @@ const AppRoutes = () => {
           <Route path="/admin/trash" element={<AdminTrash />} />
           <Route path="/admin/duplicates" element={<AdminDuplicates />} />
           <Route path="/admin/activity" element={<AdminActivity />} />
+          <Route path="/admin/events/:slug/upload" element={<EventGallery />} />
           <Route path="/admin/events/:slug/photos" element={<AdminPhotoManager />} />
         </Routes>
       </Suspense>
@@ -371,6 +377,7 @@ function App() {
                   <AndroidAppPrompt />
                   <GlobalUploadIndicator />
                   <OfflineBanner />
+                  <DevelopmentModeBadge />
                   <RequireProfileName />
                   </PhotoNavigationProvider>
                 </BrowserRouter>

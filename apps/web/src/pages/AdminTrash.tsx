@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Trash2, RotateCcw, AlertTriangle } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { getTrash, restorePhoto, permanentlyDeletePhoto, emptyTrash, getPreviewUrl } from '../api';
 import type { TrashPhoto } from '../api';
 
 const AdminTrash: React.FC = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const [photos, setPhotos] = useState<TrashPhoto[]>([]);
   const [retentionDays, setRetentionDays] = useState(30);
   const [loading, setLoading] = useState(true);
@@ -26,7 +28,7 @@ const AdminTrash: React.FC = () => {
       setRetentionDays(data.retentionDays);
       setError(null);
     } catch (err) {
-      setError('Failed to load trash');
+      setError('load');
       console.error(err);
     } finally {
       setLoading(false);
@@ -37,10 +39,10 @@ const AdminTrash: React.FC = () => {
     try {
       await restorePhoto(photoId);
       setPhotos((prev) => prev.filter((p) => p.id !== photoId));
-      setSuccess('Photo restored');
+      setSuccess('restored');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError('Failed to restore photo');
+      setError('restore');
       console.error(err);
     }
   };
@@ -50,10 +52,10 @@ const AdminTrash: React.FC = () => {
       await permanentlyDeletePhoto(photoId);
       setPhotos((prev) => prev.filter((p) => p.id !== photoId));
       setDeletingPhoto(null);
-      setSuccess('Photo permanently deleted');
+      setSuccess('deleted');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError('Failed to permanently delete photo');
+      setError('delete');
       console.error(err);
     }
   };
@@ -63,10 +65,10 @@ const AdminTrash: React.FC = () => {
       const result = await emptyTrash();
       setPhotos([]);
       setConfirmingEmpty(false);
-      setSuccess(`Permanently deleted ${result.deletedCount} photo${result.deletedCount === 1 ? '' : 's'}`);
+      setSuccess(`emptied:${result.deletedCount}`);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError('Failed to empty trash');
+      setError('empty');
       console.error(err);
     }
   };
@@ -84,15 +86,15 @@ const AdminTrash: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <Link to="/admin" className="text-blue-600 hover:text-blue-700 mb-4 inline-block">
-            ← Back to Admin
+            {t('admin:trashPage.back')}
           </Link>
           <div className="flex justify-between items-center flex-wrap gap-3">
             <div>
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                <Trash2 className="w-8 h-8" /> Trash
+                <Trash2 className="w-8 h-8" /> {t('admin:trashPage.title')}
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mt-2">
-                Photos are kept here for {retentionDays} days before being permanently deleted.
+                {t('admin:trashPage.description', { count: retentionDays })}
               </p>
             </div>
             {photos.length > 0 && (
@@ -100,7 +102,7 @@ const AdminTrash: React.FC = () => {
                 onClick={() => setConfirmingEmpty(true)}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
               >
-                Empty Trash
+                {t('admin:trashPage.emptyTrash')}
               </button>
             )}
           </div>
@@ -108,23 +110,29 @@ const AdminTrash: React.FC = () => {
 
         {success && (
           <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
-            {success}
+            {success.startsWith('emptied:')
+              ? t('admin:trashPage.success.emptied', { count: Number(success.split(':')[1]) })
+              : t(`admin:trashPage.success.${success}` as 'admin:trashPage.success.restored' | 'admin:trashPage.success.deleted')}
           </div>
         )}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
+            {t(`admin:trashPage.errors.${error}` as
+              | 'admin:trashPage.errors.load'
+              | 'admin:trashPage.errors.restore'
+              | 'admin:trashPage.errors.delete'
+              | 'admin:trashPage.errors.empty')}
           </div>
         )}
 
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-            <p className="mt-4 text-gray-600">Loading trash...</p>
+            <p className="mt-4 text-gray-600">{t('admin:trashPage.loading')}</p>
           </div>
         ) : photos.length === 0 ? (
           <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
-            <p className="text-gray-600 dark:text-gray-400">Trash is empty</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('admin:trashPage.empty')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -139,22 +147,22 @@ const AdminTrash: React.FC = () => {
                   />
                 </div>
                 <div className="absolute top-2 left-2 bg-gray-900/80 text-white px-2 py-1 rounded text-xs">
-                  {daysLeft(photo.deleted_at)}d left
+                  {t('admin:trashPage.daysLeft', { count: daysLeft(photo.deleted_at) })}
                 </div>
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                   <button
                     onClick={() => handleRestore(photo.id)}
                     className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm flex items-center gap-1"
-                    title="Restore"
+                    title={t('admin:trashPage.restore')}
                   >
-                    <RotateCcw className="w-4 h-4" /> Restore
+                    <RotateCcw className="w-4 h-4" /> {t('admin:trashPage.restore')}
                   </button>
                   <button
                     onClick={() => setDeletingPhoto(photo)}
                     className="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm"
-                    title="Delete forever"
+                    title={t('admin:trashPage.deleteForever')}
                   >
-                    Delete Forever
+                    {t('admin:trashPage.deleteForever')}
                   </button>
                 </div>
                 <div className="p-2">
@@ -171,23 +179,25 @@ const AdminTrash: React.FC = () => {
             <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
               <div className="p-6">
                 <h2 className="text-2xl font-bold mb-4 text-red-600 flex items-center gap-2">
-                  <AlertTriangle className="w-6 h-6" /> Delete Forever
+                  <AlertTriangle className="w-6 h-6" /> {t('admin:trashPage.deleteForever')}
                 </h2>
                 <p className="mb-4 text-gray-700">
-                  Permanently delete <strong>{deletingPhoto.original_filename}</strong>? This cannot be undone.
+                  {t('admin:trashPage.deleteConfirmBefore')}{' '}
+                  <strong>{deletingPhoto.original_filename}</strong>
+                  {t('admin:trashPage.deleteConfirmAfter')}
                 </p>
                 <div className="flex gap-3">
                   <button
                     onClick={() => handlePermanentDelete(deletingPhoto.id)}
                     className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                   >
-                    Delete Forever
+                    {t('admin:trashPage.deleteForever')}
                   </button>
                   <button
                     onClick={() => setDeletingPhoto(null)}
                     className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
                   >
-                    Cancel
+                    {t('common:actions.cancel')}
                   </button>
                 </div>
               </div>
@@ -200,23 +210,23 @@ const AdminTrash: React.FC = () => {
             <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
               <div className="p-6">
                 <h2 className="text-2xl font-bold mb-4 text-red-600 flex items-center gap-2">
-                  <AlertTriangle className="w-6 h-6" /> Empty Trash
+                  <AlertTriangle className="w-6 h-6" /> {t('admin:trashPage.emptyTrash')}
                 </h2>
                 <p className="mb-4 text-gray-700">
-                  Permanently delete all {photos.length} photo{photos.length === 1 ? '' : 's'} in Trash? This cannot be undone.
+                  {t('admin:trashPage.emptyConfirm', { count: photos.length })}
                 </p>
                 <div className="flex gap-3">
                   <button
                     onClick={handleEmptyTrash}
                     className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                   >
-                    Empty Trash
+                    {t('admin:trashPage.emptyTrash')}
                   </button>
                   <button
                     onClick={() => setConfirmingEmpty(false)}
                     className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
                   >
-                    Cancel
+                    {t('common:actions.cancel')}
                   </button>
                 </div>
               </div>

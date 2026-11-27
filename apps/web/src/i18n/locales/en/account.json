@@ -1,0 +1,78 @@
+{
+  "settings": {
+    "title": "User Settings",
+    "profileAndTheme": "Profile & Theme",
+    "collaborations": "Collaborations",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "displayName": "Display Name",
+    "displayNamePlaceholder": "Enter your display name",
+    "saveProfile": "Save Profile",
+    "email": "Email",
+    "downloadLocation": "Download Location (Android)",
+    "selectFolder": "Select a folder",
+    "chooseFolder": "Choose a folder...",
+    "browse": "Browse",
+    "customPath": "Custom path",
+    "saveDownloadLocation": "Save Download Location"
+  },
+  "collaborations": {
+    "title": "Events You Can Collaborate On",
+    "loading": "Loading collaborations...",
+    "empty": "You don't have any collaborations yet.",
+    "canUpload": "Can Upload",
+    "invited": "Invited {{date}}",
+    "viewEvent": "View Event"
+  },
+  "downloadPaths": {
+    "downloads": "Downloads",
+    "documents": "Documents",
+    "pictures": "Pictures",
+    "custom": "Custom",
+    "enterCustomPath": "Enter custom path",
+    "currentLocation": "Current download location:",
+    "notSet": "Not set",
+    "tipTitle": "Tip:",
+    "tipBody": "Use the Browse button to select any folder on your device, or manually enter a path."
+  },
+  "profile": {
+    "favoritesCount_one": "{{count}} favorite",
+    "favoritesCount_other": "{{count}} favorites",
+    "nameRequired": "Name cannot be empty",
+    "nameUpdated": "Name updated successfully!",
+    "nameUpdateFailed": "Failed to update name. Please try again.",
+    "fullNameTitle": "One more step",
+    "fullNameDescription": "Please enter your full name so people can recognize you as a collaborator and see who uploaded a photo.",
+    "fullNamePlaceholder": "Full name (e.g. Jane Doe)",
+    "fullNameRequired": "Please enter your full name (first and last).",
+    "fullNameSaveFailed": "Failed to save your name. Please try again."
+  },
+  "download": {
+    "pathRequired": "Path cannot be empty",
+    "locationSaved": "Download location saved! This will be used for future downloads.",
+    "folderSelectionFailed": "Failed to select folder: {{message}}"
+  },
+  "auth": {
+    "logoutConfirm": "Are you sure you want to log out?",
+    "authenticationFailed": "Authentication failed. Please try again.",
+    "loggingOut": "Logging Out...",
+    "loggingOutDescription": "Clearing your session, please wait..."
+  },
+  "invite": {
+    "invalid": "Invalid invite link",
+    "failed": "Failed to accept invitation",
+    "processing": "Processing Invitation",
+    "processingDescription": "Please wait while we add you as a collaborator...",
+    "loginRequired": "Login Required",
+    "loginDescription": "You need to be logged in to accept this collaboration invitation.",
+    "loginAction": "Login to Continue",
+    "welcome": "Welcome!",
+    "success": "You are now a collaborator on {{event}}. You can now upload photos and videos to this event.",
+    "redirecting": "Redirecting to event gallery...",
+    "already": "You're already in!",
+    "alreadyDescription": "Taking you to the event gallery...",
+    "unable": "Unable to Accept Invitation"
+  }
+}

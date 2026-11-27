@@ -11,6 +11,7 @@ import { addToQueue } from '../uploadQueue';
 import type { UploadQueueItem } from '../types';
 import { backgroundSyncService } from '../services/backgroundSync';
 import { extractMp4CreationTime, normalizeVideoFileType, captureVideoThumbnailMetadata } from '../utils/videoMetadata';
+import { useTranslation } from 'react-i18next';
 
 interface SharedFile {
   name: string;
@@ -90,6 +91,7 @@ const readNativeFileAsBlob = async (
  * 5. Show success confirmation
  */
 export default function ShareUpload() {
+  const { t } = useTranslation(['photos', 'account', 'common']);
   const { user, loading: authLoading, login } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -165,14 +167,14 @@ export default function ShareUpload() {
     } catch (error) {
       console.error('Failed to start auth flow:', error);
       setUploadStatus('error');
-      setStatusMessage('Authentication failed. Please try again.');
+      setStatusMessage(t('account:auth.authenticationFailed'));
     }
   };
 
   const handleAlbumSelected = async (albumSlug: string) => {
     setShowAlbumPicker(false);
     setUploadStatus('processing');
-    setStatusMessage('Processing files...');
+    setStatusMessage(t('photos:upload.processingFiles'));
     
     await processSharedFiles(albumSlug);
   };
@@ -365,7 +367,7 @@ export default function ShareUpload() {
       
       console.log('[ShareUpload] All files processed, starting upload...');
       setUploadStatus('uploading');
-      setStatusMessage(`Uploading ${files.length} file${files.length > 1 ? 's' : ''}...`);
+      setStatusMessage(t('photos:upload.uploadingFiles', { count: files.length }));
       
       // Trigger immediate upload
       console.log('[ShareUpload] Triggering immediate upload...');
@@ -375,7 +377,7 @@ export default function ShareUpload() {
       // Show success after a brief delay
       setTimeout(() => {
         setUploadStatus('success');
-        setStatusMessage(`Successfully queued ${files.length} file${files.length > 1 ? 's' : ''} for upload. You can close this app now.`);
+        setStatusMessage(t('photos:upload.queued', { count: files.length }));
         console.log('[ShareUpload] Upload success shown');
         
         // Navigate to home after 3 seconds
@@ -398,7 +400,7 @@ export default function ShareUpload() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('common:states.loading')}</p>
         </div>
       </div>
     );
@@ -425,7 +427,7 @@ export default function ShareUpload() {
               <>
                 <Loader2 className="w-16 h-16 animate-spin text-blue-600 mx-auto mb-4" />
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                  Processing Files
+                  {t('photos:upload.processingTitle')}
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">{statusMessage}</p>
               </>
@@ -435,7 +437,7 @@ export default function ShareUpload() {
               <>
                 <Upload className="w-16 h-16 text-blue-600 mx-auto mb-4 animate-pulse" />
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                  Uploading
+                  {t('photos:upload.uploadingTitle')}
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">{statusMessage}</p>
               </>
