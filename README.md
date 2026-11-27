@@ -337,6 +337,70 @@ npm run build
 wrangler dev  # Uses production-like environment
 ```
 
+## Personal Deployment with Workers Builds
+
+The `personal` environment deploys the Web assets and Worker API together at
+`photos.1354541676.workers.dev`. Its D1 and R2 bindings are defined in
+`wrangler.toml` under `env.personal`.
+
+### Connect the Repository
+
+In Cloudflare, select the existing `photos` Worker and open **Settings → Builds**.
+Connect `Galileo01/photos` and configure the following settings after the personal
+deployment configuration has been merged into `master`.
+
+| Setting | Value |
+|---------|-------|
+| Production branch | `master` |
+| Root directory | `/` |
+| Build command | `npm ci --include=dev && npm --prefix apps/worker ci --include=dev && npm --prefix apps/web ci --include=dev && npm run verify:personal` |
+| Deploy command | `npm run deploy:personal` |
+| Preview builds | Disabled |
+
+### Configure Build Variables
+
+Configure these variables in Workers Builds. Vite embeds the `VITE_*` values in
+the Web assets during compilation. The local `apps/web/.env.personal` file is
+Git-ignored, so the cloud build uses the values configured in Cloudflare.
+
+| Variable | Value |
+|----------|-------|
+| `NODE_VERSION` | `22.22.3` |
+| `VITE_API_URL` | `/api` |
+| `VITE_APP_NAME` | `Photos` |
+| `VITE_BRAND_NAME` | `Photos` |
+| `VITE_COPYRIGHT_HOLDER` | `Photos` |
+| `VITE_GA_MEASUREMENT_ID` | `G-PLACEHOLDER` |
+
+Runtime secrets such as `ADMIN_EMAILS`, `EVENT_COOKIE_SECRET`, and `JWT_SECRET`
+are configured on the `photos` Worker. `G-PLACEHOLDER` keeps Google Analytics
+disabled.
+
+### Update and Verify a Deployment
+
+Develop on a feature branch, push it, and open a Pull Request against `master`.
+After merging, Workers Builds installs dependencies, checks the bilingual
+documentation, runs Web lint and both packages' unit tests, builds the Worker
+and personal Web assets, and deploys them together. A failed check stops the
+deployment.
+
+Use **Deployments** and the build logs to confirm the deployed commit. Verify
+the Cloudflare Access login flow and, after signing in, the event list and admin
+pages. Private mode also protects `/health`, so a health check requires valid
+authentication.
+
+Apply new, backward-compatible D1 migrations to `photos-private` separately
+before deploying code that requires them. The existing `db-migrate.yml` workflow
+targets the upstream `photos-db` database. Worker rollback restores a code
+version, while D1 schema and stored data are managed separately.
+
+For a local build or a manual deployment, use the same root commands.
+
+```bash
+npm run verify:personal
+npm run deploy:personal
+```
+
 ## Production Deployment
 
 ### 1. Create Production D1 Database

@@ -338,6 +338,64 @@ npm run build
 wrangler dev  # Uses production-like environment
 ```
 
+## 使用 Workers Builds 进行个人部署
+
+`personal` 环境将 Web 静态资源和 Worker API 一起部署到
+`photos.1354541676.workers.dev`。D1 和 R2 绑定配置在 `wrangler.toml` 的
+`env.personal` 下。
+
+### 连接仓库
+
+在 Cloudflare 中选择现有的 `photos` Worker，打开 **Settings → Builds**。
+将个人部署配置合入 `master` 后，连接 `Galileo01/photos` 并设置以下参数。
+
+| 设置 | 值 |
+|------|----|
+| Production branch | `master` |
+| Root directory | `/` |
+| Build command | `npm ci --include=dev && npm --prefix apps/worker ci --include=dev && npm --prefix apps/web ci --include=dev && npm run verify:personal` |
+| Deploy command | `npm run deploy:personal` |
+| Preview builds | Disabled |
+
+### 配置构建变量
+
+在 Workers Builds 中配置以下变量。Vite 在编译时将 `VITE_*` 的值写入 Web
+静态资源。本地 `apps/web/.env.personal` 文件已被 Git 忽略，云端构建使用
+Cloudflare 中配置的值。
+
+| 变量 | 值 |
+|------|----|
+| `NODE_VERSION` | `22.22.3` |
+| `VITE_API_URL` | `/api` |
+| `VITE_APP_NAME` | `Photos` |
+| `VITE_BRAND_NAME` | `Photos` |
+| `VITE_COPYRIGHT_HOLDER` | `Photos` |
+| `VITE_GA_MEASUREMENT_ID` | `G-PLACEHOLDER` |
+
+`ADMIN_EMAILS`、`EVENT_COOKIE_SECRET` 和 `JWT_SECRET` 等运行时 Secrets
+配置在 `photos` Worker 上。`G-PLACEHOLDER` 表示关闭 Google Analytics。
+
+### 更新和验证部署
+
+在需求分支开发、推送，并创建面向 `master` 的 Pull Request。合并后，Workers
+Builds 安装依赖、检查双语文档、执行 Web lint 和两个包的单元测试、构建 Worker
+和 personal Web 静态资源，再一起部署。校验失败会停止本次部署。
+
+通过 **Deployments** 和构建日志确认部署对应的 commit。验证 Cloudflare Access
+登录流程，登录后检查活动列表和管理页面。私有模式也保护 `/health`，健康检查
+需要有效的登录凭据。
+
+新增向后兼容的 D1 migration，需要在部署依赖该结构的代码前单独应用到
+`photos-private`。现有 `db-migrate.yml` workflow 操作上游的 `photos-db`
+数据库。Worker 回滚恢复代码版本，D1 结构和已保存的数据单独管理。
+
+本地构建或手动部署时，使用相同的根目录命令。
+
+```bash
+npm run verify:personal
+npm run deploy:personal
+```
+
 ## 生产部署
 
 ### 1. 创建生产D1数据库
